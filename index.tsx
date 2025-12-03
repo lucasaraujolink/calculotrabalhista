@@ -228,7 +228,10 @@ function App() {
       const end = parseDate(formData.dataDemissao);
       const dates = [];
       let current = new Date(start.getFullYear(), start.getMonth(), 1);
-      const endDate = new Date(end.getFullYear(), end.getMonth(), 1);
+      
+      // FIX: O loop deve ir até o mês ANTERIOR à demissão.
+      // O mês da demissão é calculado via Saldo de Salário (na rescisão).
+      const endDate = new Date(end.getFullYear(), end.getMonth() - 1, 1);
 
       while (current <= endDate) {
         dates.push({
@@ -436,10 +439,10 @@ function App() {
           <p className="text-slate-500">Preencha os dados contratuais para gerar o demonstrativo completo.</p>
         </header>
 
-        {/* MUDANÇA NO GRID: De 3 colunas para 12 colunas para melhor controle da largura */}
+        {/* Grid Principal */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
           
-          {/* INPUT FORM: Aumentado de col-span-1 para col-span-5 (aprox 41% da largura) */}
+          {/* Inputs */}
           <div className="lg:col-span-5 xl:col-span-4 space-y-6">
             <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
                 <FormInput label="Salário Base (R$)" name="salarioBase" type="number" value={formData.salarioBase} onChange={handleInputChange} />
@@ -457,7 +460,7 @@ function App() {
             </div>
           </div>
 
-          {/* RESULTADOS: Ajustado para ocupar o restante (7 ou 8 colunas) */}
+          {/* Resultados */}
           <div className="lg:col-span-7 xl:col-span-8">
             {!calculo ? (
                 <div className="h-full flex flex-col items-center justify-center text-slate-300 min-h-[400px] border-2 border-dashed border-slate-200 rounded-2xl">
@@ -503,8 +506,11 @@ function App() {
                         </Card>
                     </div>
 
-                    <div className="flex justify-center pt-8">
-                        <button onClick={() => setShowPrintModal(true)} className="bg-slate-800 hover:bg-slate-900 text-white px-8 py-3 rounded-xl shadow-lg flex items-center gap-2 transition-all">
+                    <div className="flex flex-col sm:flex-row gap-4 justify-center pt-8 no-print">
+                         <button onClick={() => setShowAdjustModal(true)} className="bg-white text-indigo-700 border border-indigo-200 hover:bg-indigo-50 px-6 py-3 rounded-xl shadow-sm flex items-center gap-2 transition-all font-semibold">
+                            <span className="material-icons-round">post_add</span> Adicionar Provento/Desconto
+                        </button>
+                        <button onClick={() => setShowPrintModal(true)} className="bg-slate-800 hover:bg-slate-900 text-white px-8 py-3 rounded-xl shadow-lg flex items-center gap-2 transition-all font-semibold">
                             <span className="material-icons-round">print</span> Imprimir Relatório
                         </button>
                     </div>
@@ -552,28 +558,33 @@ function App() {
         <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4 backdrop-blur-sm no-print">
             <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
                 <div className="p-6 border-b flex justify-between items-center">
-                    <h3 className="text-xl font-bold text-slate-800">Adicionar Ajuste</h3>
+                    <h3 className="text-xl font-bold text-slate-800">Adicionar Ajuste Manual</h3>
                     <button onClick={() => setShowAdjustModal(false)} className="text-slate-400 hover:text-slate-600"><span className="material-icons-round">close</span></button>
                 </div>
                 <form onSubmit={addAjuste} className="p-6 space-y-4">
-                    <div><label className="block text-sm font-bold text-slate-700 mb-1">Descrição</label><input name="descAjuste" required className="w-full border p-2 rounded-lg" placeholder="Ex: Horas Extras" /></div>
-                    <div><label className="block text-sm font-bold text-slate-700 mb-1">Valor (R$)</label><input name="valAjuste" type="number" step="0.01" required className="w-full border p-2 rounded-lg" placeholder="0.00" /></div>
+                    <div><label className="block text-sm font-bold text-slate-700 mb-1">Descrição do Evento</label><input name="descAjuste" required className="w-full border p-3 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none" placeholder="Ex: Horas Extras, Adiantamento..." /></div>
+                    <div><label className="block text-sm font-bold text-slate-700 mb-1">Valor (R$)</label><input name="valAjuste" type="number" step="0.01" required className="w-full border p-3 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none" placeholder="0.00" /></div>
                     <div>
-                        <label className="block text-sm font-bold text-slate-700 mb-1">Tipo</label>
-                        <select name="tipoAjuste" className="w-full border p-2 rounded-lg"><option value="Provento">Provento (Soma)</option><option value="Desconto">Desconto (Subtrai)</option></select>
+                        <label className="block text-sm font-bold text-slate-700 mb-1">Tipo de Evento</label>
+                        <select name="tipoAjuste" className="w-full border p-3 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none bg-white"><option value="Provento">Provento (Soma ao total)</option><option value="Desconto">Desconto (Subtrai do total)</option></select>
                     </div>
-                    <button type="submit" className="w-full bg-indigo-600 text-white py-3 rounded-lg font-bold mt-4">Adicionar</button>
+                    <button type="submit" className="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-3 rounded-lg font-bold mt-4 shadow-lg transition-all">Adicionar Ajuste</button>
                 </form>
                 <div className="px-6 pb-6">
-                    <h4 className="font-bold text-sm text-slate-500 mb-2">Ajustes Atuais</h4>
-                    {ajustes.length === 0 && <p className="text-sm text-slate-400 italic">Nenhum ajuste adicionado.</p>}
-                    <ul className="space-y-2">
+                    <h4 className="font-bold text-xs uppercase text-slate-500 mb-3 tracking-wide">Ajustes Adicionados</h4>
+                    {ajustes.length === 0 && <p className="text-sm text-slate-400 italic text-center py-2 bg-slate-50 rounded">Nenhum ajuste manual adicionado.</p>}
+                    <ul className="space-y-2 max-h-40 overflow-y-auto pr-1">
                         {ajustes.map((aj, i) => (
-                            <li key={i} className="flex justify-between text-sm bg-slate-50 p-2 rounded"><span>{aj.descricao}</span><span className={aj.tipo === 'Provento' ? 'text-green-600' : 'text-red-600'}>{aj.tipo === 'Provento' ? '+' : '-'} {formatCurrency(aj.valor)}</span></li>
+                            <li key={i} className="flex justify-between items-center text-sm bg-slate-50 p-3 rounded border border-slate-100">
+                                <span className="font-medium text-slate-700">{aj.descricao}</span>
+                                <span className={`font-bold font-mono ${aj.tipo === 'Provento' ? 'text-green-600' : 'text-red-600'}`}>
+                                    {aj.tipo === 'Provento' ? '+' : '-'} {formatCurrency(aj.valor)}
+                                </span>
+                            </li>
                         ))}
                     </ul>
-                    <div className="flex justify-end gap-3 mt-6">
-                        <button onClick={() => { handleCalcular(); setShowAdjustModal(false); }} className="px-6 py-2 bg-slate-800 text-white rounded-lg hover:bg-slate-900 font-medium w-full">Concluir</button>
+                    <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-slate-100">
+                        <button onClick={() => { handleCalcular(); setShowAdjustModal(false); }} className="px-6 py-3 bg-slate-800 text-white rounded-lg hover:bg-slate-900 font-bold w-full shadow-md">Concluir e Recalcular</button>
                     </div>
                 </div>
             </div>
@@ -781,11 +792,11 @@ function App() {
                         </div>
                         )}
 
-                        <div className="border-t border-slate-200 pt-4 flex items-center gap-3">
-                            <div className="bg-slate-800 text-white w-10 h-10 flex items-center justify-center font-bold text-lg rounded">L</div>
+                        <div className="border-t border-slate-200 pt-4 flex items-center gap-4">
+                            <div className="bg-slate-800 text-white w-12 h-12 flex items-center justify-center font-bold text-xl rounded">L</div>
                             <div>
-                                <div className="text-sm font-bold uppercase text-slate-800">Lucas Araujo dos Santos</div>
-                                <div className="text-xs text-slate-500 uppercase">Contador • CRC-BA: 046968/O-6</div>
+                                <div className="text-lg font-black uppercase text-slate-800 tracking-wide">Lucas Araujo dos Santos</div>
+                                <div className="text-sm font-semibold text-slate-500 uppercase">Contador • CRC-BA: 046968/O-6</div>
                             </div>
                         </div>
                     </div>
