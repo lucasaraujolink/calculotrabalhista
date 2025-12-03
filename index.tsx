@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { createRoot } from 'react-dom/client';
 
@@ -101,22 +102,22 @@ interface CardProps {
 const Card = ({ children, className = "", title = "", icon = "", delay = "", action, onClick }: CardProps) => (
   <div 
     onClick={onClick}
-    className={`bg-white rounded-2xl shadow-sm hover:shadow-md transition-all duration-300 border border-slate-100 overflow-hidden ${className} ${delay ? 'animate-slide-up ' + delay : ''} ${onClick ? 'cursor-pointer ring-2 ring-transparent hover:ring-indigo-200' : ''}`}
+    className={`bg-white rounded-2xl shadow-sm hover:shadow-md transition-all duration-300 border border-slate-100 overflow-hidden ${className} ${delay ? 'animate-slide-up ' + delay : ''} ${onClick ? 'cursor-pointer ring-2 ring-transparent hover:ring-indigo-200' : ''} print:shadow-none print:border-slate-300 print:rounded-lg print:break-inside-avoid`}
   >
     {(title || icon) && (
-      <div className="px-6 py-4 border-b border-slate-50 flex justify-between items-center bg-gradient-to-r from-slate-50 to-white">
+      <div className="px-6 py-4 border-b border-slate-50 flex justify-between items-center bg-gradient-to-r from-slate-50 to-white print:py-2 print:px-4 print:bg-slate-50 print:border-slate-200">
         <div className="flex items-center gap-3">
             {icon && (
-            <div className="p-2 bg-indigo-50 rounded-lg text-indigo-600">
+            <div className="p-2 bg-indigo-50 rounded-lg text-indigo-600 print:bg-transparent print:p-0 print:text-slate-800">
                 <span className="material-icons-round text-xl block">{icon}</span>
             </div>
             )}
-            <h3 className="font-semibold text-slate-700">{title}</h3>
+            <h3 className="font-semibold text-slate-700 print:text-sm print:uppercase print:tracking-wide">{title}</h3>
         </div>
-        {action && <div>{action}</div>}
+        {action && <div className="print:hidden">{action}</div>}
       </div>
     )}
-    <div className="p-6">{children}</div>
+    <div className="p-6 print:p-4">{children}</div>
   </div>
 );
 
@@ -129,12 +130,12 @@ interface ResultRowProps {
 }
 
 const ResultRow = ({ label, value, subtext = "", isNegative = false, isTotal = false }: ResultRowProps) => (
-  <div className={`group flex justify-between items-start py-3 px-2 rounded-lg transition-colors hover:bg-slate-50 ${isTotal ? 'border-t-2 border-dashed border-slate-200 mt-2 pt-4' : 'border-b border-slate-50 last:border-0'}`}>
+  <div className={`group flex justify-between items-start py-3 px-2 rounded-lg transition-colors hover:bg-slate-50 ${isTotal ? 'border-t-2 border-dashed border-slate-200 mt-2 pt-4 print:border-slate-300' : 'border-b border-slate-50 last:border-0 print:border-slate-100'} print:py-1 print:hover:bg-transparent`}>
     <div>
-      <div className={`text-sm ${isTotal ? 'font-bold text-slate-800 text-lg' : 'font-medium text-slate-600 group-hover:text-slate-800'}`}>{label}</div>
-      {subtext && <div className="text-xs text-slate-400 mt-0.5">{subtext}</div>}
+      <div className={`text-sm ${isTotal ? 'font-bold text-slate-800 text-lg print:text-base' : 'font-medium text-slate-600 group-hover:text-slate-800 print:text-slate-700'}`}>{label}</div>
+      {subtext && <div className="text-xs text-slate-400 mt-0.5 print:text-slate-500">{subtext}</div>}
     </div>
-    <div className={`font-mono ${isTotal ? 'text-xl font-bold' : 'font-medium'} ${isNegative ? 'text-red-500' : isTotal ? 'text-indigo-600' : 'text-slate-700'}`}>
+    <div className={`font-mono ${isTotal ? 'text-xl font-bold print:text-lg' : 'font-medium'} ${isNegative ? 'text-red-500' : isTotal ? 'text-indigo-600 print:text-slate-900' : 'text-slate-700'}`}>
       {isNegative ? '-' : ''} {formatCurrency(value)}
     </div>
   </div>
@@ -818,7 +819,7 @@ const App = () => {
         </div>
       </div>
 
-      {/* --- MODAL DE IMPRESSÃO (ESTILO RELATÓRIO) --- */}
+      {/* --- MODAL DE IMPRESSÃO (ESTILO CARDS IDENTICO À TELA) --- */}
       {isPrintModalOpen && resultado && (
         <div id="print-area-container" className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 print:p-0 print:bg-white print:static">
             
@@ -850,108 +851,111 @@ const App = () => {
                 </button>
             </div>
 
-            {/* ÁREA DE IMPRESSÃO - PAPEL A4 */}
-            <div id="print-area" className="bg-white w-full max-w-[210mm] min-h-[297mm] p-8 md:p-12 shadow-2xl print:shadow-none print:w-full print:max-w-none print:p-0 mx-auto">
+            {/* ÁREA DE IMPRESSÃO - LAYOUT GRID/CARDS */}
+            <div id="print-area" className="bg-white w-full max-w-[210mm] min-h-[297mm] p-8 md:p-8 shadow-2xl print:shadow-none print:w-full print:max-w-none print:p-4 mx-auto print:bg-white">
                 
                 {/* CABEÇALHO */}
-                <div className="flex justify-between items-start border-b-2 border-slate-800 pb-6 mb-8 print:pb-4 print:mb-4">
+                <div className="flex justify-between items-center border-b-2 border-slate-800 pb-4 mb-6 print:pb-4 print:mb-6">
                     <div>
-                        <h1 className="text-2xl font-bold text-slate-800 uppercase tracking-tight print:text-xl">Demonstrativo de Valores</h1>
-                        <p className="text-slate-500 uppercase text-xs tracking-widest mt-1">Cálculo Rescisório Trabalhista</p>
+                        <h1 className="text-2xl font-bold text-slate-800 uppercase tracking-tight">Cálculo de Rescisão</h1>
+                        <p className="text-slate-500 font-medium text-sm">Demonstrativo de Valores</p>
                     </div>
                     <div className="text-right">
                         <div className="text-xs text-slate-400 uppercase tracking-wider">Data do Cálculo</div>
-                        <div className="text-lg font-bold text-slate-700 print:text-base">{new Date().toLocaleDateString('pt-BR')}</div>
+                        <div className="text-lg font-bold text-slate-700">{new Date().toLocaleDateString('pt-BR')}</div>
                     </div>
                 </div>
 
-                {/* DADOS DO CONTRATO */}
-                <div className="bg-slate-50 rounded-lg p-6 mb-8 border border-slate-100 print:p-3 print:mb-4 print:bg-slate-50 print:border-slate-200">
-                    <div className="grid grid-cols-4 gap-6 print:gap-2">
-                        <div>
-                            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Data de Admissão</div>
-                            <div className="font-semibold text-slate-700 print:text-sm">{new Date(formData.dataAdmissao + 'T00:00:00').toLocaleDateString('pt-BR')}</div>
+                {/* CARD DE DADOS DO CONTRATO */}
+                <div className="mb-6">
+                    <Card title="Dados do Contrato" className="border-slate-300 print:shadow-none">
+                        <div className="grid grid-cols-4 gap-4 text-sm">
+                            <div>
+                                <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Admissão</div>
+                                <div className="font-semibold text-slate-700">{new Date(formData.dataAdmissao + 'T00:00:00').toLocaleDateString('pt-BR')}</div>
+                            </div>
+                            <div>
+                                <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Demissão</div>
+                                <div className="font-semibold text-slate-700">{new Date(formData.dataDemissao + 'T00:00:00').toLocaleDateString('pt-BR')}</div>
+                            </div>
+                            <div>
+                                <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Tipo de Aviso</div>
+                                <div className="font-semibold text-slate-700 uppercase">{formData.tipoAviso}</div>
+                            </div>
+                             <div>
+                                <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Remuneração</div>
+                                <div className="font-bold text-slate-800">{formatCurrency(formData.salarioBase + formData.adicionalInsalubridade)}</div>
+                            </div>
                         </div>
-                        <div>
-                            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Data de Demissão</div>
-                            <div className="font-semibold text-slate-700 print:text-sm">{new Date(formData.dataDemissao + 'T00:00:00').toLocaleDateString('pt-BR')}</div>
-                        </div>
-                        <div>
-                            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Tipo de Aviso</div>
-                            <div className="font-semibold text-slate-700 uppercase print:text-sm">{formData.tipoAviso}</div>
-                        </div>
-                        <div>
-                            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Projeção Aviso</div>
-                            <div className="font-semibold text-slate-700 print:text-sm">{resultado.dataProjecao}</div>
-                        </div>
-                        <div className="mt-4 print:mt-2">
-                            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Maior Remuneração</div>
-                            <div className="font-bold text-lg text-slate-800 print:text-base">{formatCurrency(formData.salarioBase + formData.adicionalInsalubridade)}</div>
-                        </div>
-                    </div>
+                    </Card>
                 </div>
 
-                {/* TABELA DE VALORES */}
-                <div className="mb-8 print:mb-4">
-                    <div className="grid grid-cols-12 gap-4 border-b border-slate-200 pb-2 mb-2 text-xs font-bold text-slate-500 uppercase tracking-wider print:mb-1 print:pb-1">
-                        <div className="col-span-6">Rubrica</div>
-                        <div className="col-span-2 text-center">Ref.</div>
-                        <div className="col-span-2 text-right">Proventos</div>
-                        <div className="col-span-2 text-right">Descontos</div>
+                {/* GRID DE RESULTADOS - 2 COLUNAS */}
+                <div className="grid grid-cols-2 gap-6">
+                    
+                    {/* COLUNA 1 */}
+                    <div className="space-y-6">
+                         {/* Card Rescisão Líquida */}
+                        <Card className="bg-slate-50 border-slate-300">
+                             <div className="text-sm font-bold text-slate-500 uppercase tracking-wider mb-2">Rescisão Líquida</div>
+                             <div className="text-2xl font-bold text-slate-800 mb-1">{formatCurrency(resultado.liquido)}</div>
+                        </Card>
+
+                        <Card title="Proventos Principais" className="border-slate-300">
+                             {(resultado.valSaldoSalario > 0.01) && <ResultRow label="Saldo de Salário" value={resultado.valSaldoSalario} subtext={`${resultado.diasTrabalhadosMes} dias`} />}
+                             {(resultado.valAviso > 0.01) && <ResultRow label="Aviso Prévio" value={resultado.valAviso} subtext={`${resultado.diasAviso} dias`} />}
+                        </Card>
+
+                        <Card title="13º Salário" className="border-slate-300">
+                             {(resultado.val13Proporcional > 0.01) && <ResultRow label="13º Proporcional" value={resultado.val13Proporcional} subtext={`${resultado.avos13}/12 avos`} />}
+                             {(resultado.val13Indenizado > 0.01) && <ResultRow label="13º s/ Aviso Indenizado" value={resultado.val13Indenizado} />}
+                        </Card>
+
+                        <Card title="Descontos" className="border-slate-300">
+                            <ResultRow label="INSS" value={resultado.valINSS} isNegative />
+                        </Card>
                     </div>
 
-                    <div className="space-y-1 print:space-y-0 text-sm print:text-xs">
-                        {/* Linhas Condicionais: Só renderiza se valor > 0 */}
-                        <PrintRow label="Saldo de Salário" refText={`${resultado.diasTrabalhadosMes}d`} value={resultado.valSaldoSalario} type="prov" />
-                        <PrintRow label="Aviso Prévio" refText={`${resultado.diasAviso}d`} value={resultado.valAviso} type="prov" />
-                        
-                        <PrintRow label="13º Salário Proporcional" refText={`${resultado.avos13}/12`} value={resultado.val13Proporcional} type="prov" />
-                        <PrintRow label="13º s/ Aviso Prévio Indenizado" refText="-" value={resultado.val13Indenizado} type="prov" />
-                        
-                        <PrintRow label="Férias Vencidas" refText="-" value={resultado.valFeriasVencidas} type="prov" />
-                        <PrintRow label="1/3 s/ Férias Vencidas" refText="-" value={resultado.valTercoFeriasVencidas} type="prov" />
-                        
-                        <PrintRow label="Férias Proporcionais" refText={`${resultado.avosFerias}/12`} value={resultado.valFeriasProporcionais} type="prov" />
-                        <PrintRow label="1/3 s/ Férias Proporcionais" refText="-" value={resultado.valTercoFeriasProp} type="prov" />
-                        
-                        <PrintRow label="Férias s/ Aviso Prévio Indenizado" refText="-" value={resultado.valFeriasIndenizadas} type="prov" />
-                        <PrintRow label="1/3 s/ Aviso Prévio Indenizado" refText="-" value={resultado.valTercoFeriasIndenizadas} type="prov" />
+                    {/* COLUNA 2 */}
+                    <div className="space-y-6">
+                        {/* Card Total Geral */}
+                         <Card className="bg-slate-800 text-white border-transparent print:bg-slate-800 print:text-white">
+                             <div className="text-sm font-bold text-slate-300 uppercase tracking-wider mb-2">Total Geral a Receber</div>
+                             <div className="text-2xl font-bold text-white mb-1">{formatCurrency(resultado.liquido + resultado.fgts.total)}</div>
+                        </Card>
 
-                        {/* Descontos */}
-                        <PrintRow label="INSS" refText="Desc." value={resultado.valINSS} type="desc" />
+                        <Card title="Férias" className="border-slate-300">
+                            {resultado.valFeriasVencidas > 0.01 && (
+                                <>
+                                    <ResultRow label="Férias Vencidas" value={resultado.valFeriasVencidas} />
+                                    <ResultRow label="1/3 Férias Vencidas" value={resultado.valTercoFeriasVencidas} />
+                                    <hr className="my-2 border-slate-200"/>
+                                </>
+                            )}
+                            <ResultRow label="Férias Proporcionais" value={resultado.valFeriasProporcionais} subtext={`${resultado.avosFerias}/12 avos`} />
+                            <ResultRow label="1/3 Férias Proporcionais" value={resultado.valTercoFeriasProp} />
+                            
+                            {resultado.valFeriasIndenizadas > 0.01 && (
+                                <>
+                                    <hr className="my-2 border-slate-200"/>
+                                    <ResultRow label="Férias s/ Aviso Indenizado" value={resultado.valFeriasIndenizadas} />
+                                    <ResultRow label="1/3 s/ Aviso Indenizado" value={resultado.valTercoFeriasIndenizadas} />
+                                </>
+                            )}
+                        </Card>
 
-                        {/* Totais Intermediários */}
-                        <div className="grid grid-cols-12 gap-4 pt-4 mt-4 border-t border-slate-200 font-bold text-slate-500 uppercase text-xs print:pt-2 print:mt-2">
-                             <div className="col-span-8">Totais</div>
-                             <div className="col-span-2 text-right">{formatCurrency(
-                                 resultado.valSaldoSalario + resultado.valAviso + resultado.val13Proporcional + resultado.val13Indenizado + resultado.valFeriasVencidas + resultado.valTercoFeriasVencidas + resultado.valFeriasProporcionais + resultado.valTercoFeriasProp + resultado.valFeriasIndenizadas + resultado.valTercoFeriasIndenizadas
-                             )}</div>
-                             <div className="col-span-2 text-right text-red-500">{formatCurrency(resultado.valINSS)}</div>
-                        </div>
+                        <Card title="FGTS" className="border-slate-300">
+                            <ResultRow label="Saldo Estimado FGTS" value={resultado.fgts.saldoEstimado} />
+                            <ResultRow label="Multa 40%" value={resultado.fgts.multa} />
+                            <ResultRow label="Total FGTS" value={resultado.fgts.total} isTotal />
+                        </Card>
                     </div>
+
                 </div>
 
-                {/* TOTALIZADORES FINAIS */}
-                <div className="bg-slate-800 text-white rounded-lg p-6 print:p-4 print:bg-slate-800 print:text-white">
-                    <div className="grid grid-cols-2 gap-8 border-b border-slate-700 pb-4 mb-4 print:gap-4 print:pb-2 print:mb-2">
-                        <div>
-                            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Rescisão Líquida a Receber</div>
-                            <div className="text-xl font-bold print:text-lg">{formatCurrency(resultado.liquido)}</div>
-                        </div>
-                        <div className="text-right">
-                             <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Total FGTS + Multa</div>
-                             <div className="text-xl font-bold text-slate-300 print:text-lg">{formatCurrency(resultado.fgts.total)}</div>
-                        </div>
-                    </div>
-                    <div className="flex justify-between items-center">
-                         <div className="text-sm font-bold uppercase tracking-widest text-slate-300">Total Geral a Receber</div>
-                         <div className="text-3xl font-bold print:text-2xl">{formatCurrency(resultado.liquido + resultado.fgts.total)}</div>
-                    </div>
-                </div>
-                
                 {/* ASSINATURAS */}
                 {includeSignatures && (
-                    <div className="mt-16 grid grid-cols-2 gap-12 print:mt-10 print:gap-8">
+                    <div className="mt-12 grid grid-cols-2 gap-12 print:break-inside-avoid">
                         <div className="border-t border-slate-400 pt-2 text-center">
                             <div className="text-xs font-bold uppercase text-slate-400">Assinatura do Funcionário</div>
                         </div>
@@ -962,8 +966,8 @@ const App = () => {
                 )}
 
                 {/* RODAPÉ DO CONTADOR */}
-                <div className="mt-12 pt-6 border-t border-slate-200 flex items-center gap-4 print:mt-8 print:pt-4">
-                     <div className="w-10 h-10 bg-slate-800 text-white flex items-center justify-center font-bold text-lg rounded">L</div>
+                <div className="mt-8 pt-6 border-t border-slate-200 flex items-center gap-4 print:break-inside-avoid">
+                     <div className="w-10 h-10 bg-slate-800 text-white flex items-center justify-center font-bold text-lg rounded print:bg-slate-800 print:text-white">L</div>
                      <div>
                          <div className="font-bold text-slate-800 text-sm uppercase">Lucas Araujo dos Santos</div>
                          <div className="text-xs text-slate-500">Contador &bull; CRC-BA: 046968/O-6</div>
