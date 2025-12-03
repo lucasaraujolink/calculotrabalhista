@@ -53,28 +53,6 @@
       -webkit-font-smoothing: antialiased;
     }
 
-    @media print {
-      body {
-        background-color: white;
-      }
-      .no-print {
-        display: none !important;
-      }
-      .print-only {
-        display: block !important;
-      }
-      .shadow-sm, .shadow-md, .shadow-lg, .shadow-xl {
-        box-shadow: none !important;
-      }
-      .bg-white {
-        background-color: transparent !important;
-      }
-    }
-    
-    .print-only {
-      display: none;
-    }
-
     ::-webkit-scrollbar {
       width: 8px;
     }
@@ -92,7 +70,63 @@
     .delay-100 { animation-delay: 100ms; }
     .delay-200 { animation-delay: 200ms; }
     .delay-300 { animation-delay: 300ms; }
-  </style>
+
+    /* REGRAS ESPECÍFICAS DE IMPRESSÃO */
+    @media print {
+      @page {
+        size: A4;
+        margin: 10mm;
+      }
+
+      body {
+        background-color: white;
+        margin: 0;
+        padding: 0;
+      }
+
+      /* Esconde tudo que não for o relatório */
+      body * {
+        visibility: hidden;
+      }
+
+      /* Exibe apenas a área de impressão */
+      #print-area, #print-area * {
+        visibility: visible;
+      }
+
+      #print-area {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        margin: 0;
+        padding: 0;
+        overflow: visible !important;
+        background: white;
+      }
+
+      /* Força a impressão de cores de fundo e bordas */
+      * {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+        color-adjust: exact !important;
+      }
+
+      .no-print {
+        display: none !important;
+      }
+
+      /* Remove sombras para impressão limpa */
+      .shadow-sm, .shadow-md, .shadow-lg, .shadow-xl, .shadow-2xl {
+        box-shadow: none !important;
+      }
+      
+      /* Garante que textos brancos sobre fundo escuro fiquem legíveis ou inverte */
+      .text-white {
+        color: white !important; /* Mantém branco se tiver fundo */
+      }
+    }
+  </script>
 <script type="importmap">
 {
   "imports": {
