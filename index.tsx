@@ -347,6 +347,11 @@ function App() {
     const valorFeriasVencidas = feriasVencidasQtd * salarioTotal;
     const tercoFeriasVencidas = valorFeriasVencidas / 3;
 
+    // Férias em Dobro (A cada 2 vencidas, 1 é dobra)
+    const qtdFeriasDobro = Math.floor(feriasVencidasQtd / 2);
+    const valorFeriasDobro = qtdFeriasDobro * salarioTotal;
+    const tercoFeriasDobro = valorFeriasDobro / 3;
+
     let inicioPeriodoAquisitivo = new Date(admissao);
     while (new Date(inicioPeriodoAquisitivo.getFullYear() + 1, inicioPeriodoAquisitivo.getMonth(), inicioPeriodoAquisitivo.getDate()) <= demissao) {
         inicioPeriodoAquisitivo.setFullYear(inicioPeriodoAquisitivo.getFullYear() + 1);
@@ -421,7 +426,7 @@ function App() {
     const descontoINSS = calcularINSS(baseINSS);
 
     // 8. Totais
-    const totalProventos = saldoSalario + valorAvisoProvento + valor13 + valorFeriasVencidas + tercoFeriasVencidas + valorFeriasProp + tercoFeriasProp + valor13Indenizado + valorFeriasIndenizado + tercoFeriasIndenizado;
+    const totalProventos = saldoSalario + valorAvisoProvento + valor13 + valorFeriasVencidas + tercoFeriasVencidas + valorFeriasDobro + tercoFeriasDobro + valorFeriasProp + tercoFeriasProp + valor13Indenizado + valorFeriasIndenizado + tercoFeriasIndenizado;
     
     const totalDescontosAutomaticos = descontoINSS + valorAvisoDesconto;
 
@@ -437,6 +442,7 @@ function App() {
         valorAvisoDesconto, 
         diasAviso, projecaoAviso, valor13, avos13,
         valorFeriasVencidas, tercoFeriasVencidas, valorFeriasProp, tercoFeriasProp, avosFerias: avosFeriasCalc,
+        valorFeriasDobro, tercoFeriasDobro, qtdFeriasDobro,
         valor13Indenizado, valorFeriasIndenizado, tercoFeriasIndenizado,
         fgtsRescisao, fgtsAvisoIndenizado, multa40, totalContaFGTS, saldoFGTSBase: saldoFGTSParaMulta,
         descontoINSS, rescisaoLiquida, totalGeral,
@@ -587,8 +593,17 @@ function App() {
                             {calculo.valor13Indenizado > 0 && <ResultRow label="13º Salário s/ Aviso Prévio Indenizado" value={calculo.valor13Indenizado} subtext="1/12 avos" />}
                             {calculo.valorFeriasIndenizado > 0 && <><ResultRow label="Férias s/ Aviso Prévio Indenizado" value={calculo.valorFeriasIndenizado} /><ResultRow label="1/3 s/ Férias Indenizadas" value={calculo.tercoFeriasIndenizado} /></>}
                             <ResultRow label="13º Salário Proporcional" value={calculo.valor13} subtext={`${calculo.avos13}/12 avos`} />
+                            
                             <ResultRow label="Férias Vencidas" value={calculo.valorFeriasVencidas} hideIfZero />
                             <ResultRow label="1/3 Férias Vencidas" value={calculo.tercoFeriasVencidas} hideIfZero />
+                            
+                            {calculo.valorFeriasDobro > 0 && (
+                                <>
+                                    <ResultRow label="Férias em Dobro" value={calculo.valorFeriasDobro} subtext={`${calculo.qtdFeriasDobro} período(s)`} />
+                                    <ResultRow label="1/3 s/ Férias em Dobro" value={calculo.tercoFeriasDobro} />
+                                </>
+                            )}
+
                             <ResultRow label="Férias Proporcionais" value={calculo.valorFeriasProp} subtext={`${calculo.avosFerias}/12 avos`} />
                             <ResultRow label="1/3 Férias Proporcionais" value={calculo.tercoFeriasProp} />
                             {ajustes.filter(a => a.tipo === 'Provento').map((aj, idx) => <ResultRow key={idx} label={aj.descricao} value={aj.valor} subtext="Manual" />)}
@@ -778,6 +793,22 @@ function App() {
                                     <td className="p-2 text-right font-mono">{formatCurrency(calculo.tercoFeriasVencidas)}</td>
                                     <td className="p-2 text-right font-mono"></td>
                                 </tr>
+                                )}
+                                {calculo.valorFeriasDobro > 0 && (
+                                <>
+                                    <tr className="border-b border-slate-200">
+                                        <td className="p-2">Férias em Dobro</td>
+                                        <td className="p-2 text-center text-slate-500">{calculo.qtdFeriasDobro}</td>
+                                        <td className="p-2 text-right font-mono">{formatCurrency(calculo.valorFeriasDobro)}</td>
+                                        <td className="p-2 text-right font-mono"></td>
+                                    </tr>
+                                    <tr className="border-b border-slate-200 bg-slate-50">
+                                        <td className="p-2">1/3 s/ Férias em Dobro</td>
+                                        <td className="p-2 text-center text-slate-500">1/3</td>
+                                        <td className="p-2 text-right font-mono">{formatCurrency(calculo.tercoFeriasDobro)}</td>
+                                        <td className="p-2 text-right font-mono"></td>
+                                    </tr>
+                                </>
                                 )}
                                 <tr className="border-b border-slate-200">
                                     <td className="p-2">Férias Proporcionais</td>
