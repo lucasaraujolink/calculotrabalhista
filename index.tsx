@@ -424,7 +424,7 @@ function App() {
 
   return (
     <div className="min-h-screen pb-12 font-sans text-slate-600 bg-slate-50">
-      <div className="max-w-5xl mx-auto p-4 md:p-8 no-print">
+      <div className="max-w-[1400px] mx-auto p-4 md:p-8 no-print">
         {/* Header */}
         <header className="mb-8 text-center md:text-left">
           <div className="flex items-center gap-3 justify-center md:justify-start mb-2">
@@ -436,8 +436,11 @@ function App() {
           <p className="text-slate-500">Preencha os dados contratuais para gerar o demonstrativo completo.</p>
         </header>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <div className="lg:col-span-1 space-y-6">
+        {/* MUDANÇA NO GRID: De 3 colunas para 12 colunas para melhor controle da largura */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+          
+          {/* INPUT FORM: Aumentado de col-span-1 para col-span-5 (aprox 41% da largura) */}
+          <div className="lg:col-span-5 xl:col-span-4 space-y-6">
             <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
                 <FormInput label="Salário Base (R$)" name="salarioBase" type="number" value={formData.salarioBase} onChange={handleInputChange} />
                 <FormInput label="Adicional Insalubridade (R$)" name="insalubridade" type="number" value={formData.insalubridade} onChange={handleInputChange} />
@@ -454,7 +457,8 @@ function App() {
             </div>
           </div>
 
-          <div className="lg:col-span-2">
+          {/* RESULTADOS: Ajustado para ocupar o restante (7 ou 8 colunas) */}
+          <div className="lg:col-span-7 xl:col-span-8">
             {!calculo ? (
                 <div className="h-full flex flex-col items-center justify-center text-slate-300 min-h-[400px] border-2 border-dashed border-slate-200 rounded-2xl">
                     <span className="material-icons-round text-6xl mb-4">analytics</span>
@@ -577,8 +581,8 @@ function App() {
       )}
 
       {showPrintModal && calculo && (
-        <div className="fixed inset-0 bg-slate-900/80 z-[100] flex justify-center overflow-y-auto print:absolute print:inset-0 print:bg-white print:z-auto">
-            <div className="bg-slate-200 min-h-screen w-full flex flex-col items-center py-8 print:bg-white print:p-0">
+        <div className="fixed inset-0 bg-slate-900/80 z-[100] flex justify-center overflow-y-auto print:absolute print:inset-0 print:bg-white print:z-auto print:h-full">
+            <div className="bg-slate-200 min-h-screen w-full flex flex-col items-center py-8 print:bg-white print:p-0 print:h-full">
                 
                 <div className="bg-white p-4 rounded-xl shadow-lg mb-8 flex flex-col md:flex-row items-center gap-6 w-full max-w-4xl no-print">
                     <div className="flex items-center gap-4">
@@ -590,188 +594,199 @@ function App() {
                     <button onClick={() => window.print()} className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2 rounded-lg font-bold shadow-md flex items-center gap-2"><span className="material-icons-round">print</span> Imprimir</button>
                 </div>
 
-                {/* AREA DE IMPRESSAO - Layout Tabela Formal */}
-                <div id="print-area-container" className="bg-white w-[210mm] min-h-[297mm] p-[15mm] shadow-2xl mx-auto relative text-sm text-slate-900">
+                {/* AREA DE IMPRESSAO - Layout Tabela Formal - COM CORREÇÃO DE FOOTER */}
+                <div id="print-area-container" className="bg-white w-[210mm] min-h-[297mm] p-[15mm] shadow-2xl mx-auto relative text-sm text-slate-900 flex flex-col justify-between">
                     
-                    {/* Header */}
-                    <div className="border-b-2 border-slate-900 pb-4 mb-6 flex justify-between items-start">
-                        <div>
-                            <h1 className="text-xl font-bold uppercase tracking-wider">Demonstrativo de Valores</h1>
-                            <p className="text-xs font-semibold text-slate-500 uppercase mt-1">Cálculo Rescisório Trabalhista</p>
+                    <div>
+                        {/* Header */}
+                        <div className="border-b-2 border-slate-900 pb-4 mb-6 flex justify-between items-start">
+                            <div>
+                                <h1 className="text-xl font-bold uppercase tracking-wider">Demonstrativo de Valores</h1>
+                                <p className="text-xs font-semibold text-slate-500 uppercase mt-1">Cálculo Rescisório Trabalhista</p>
+                            </div>
+                            <div className="text-right">
+                                <div className="text-[10px] text-slate-500 uppercase">Data do Cálculo</div>
+                                <div className="font-mono font-bold">{formatDate(new Date())}</div>
+                            </div>
                         </div>
-                        <div className="text-right">
-                            <div className="text-[10px] text-slate-500 uppercase">Data do Cálculo</div>
-                            <div className="font-mono font-bold">{formatDate(new Date())}</div>
+
+                        {/* Resumo */}
+                        <div className="bg-slate-100 border border-slate-300 rounded p-4 mb-6 grid grid-cols-4 gap-4 text-xs">
+                            <div><div className="font-bold text-slate-500 uppercase mb-1">Admissão</div><div className="font-mono font-bold text-base">{formatDate(parseDate(formData.dataAdmissao))}</div></div>
+                            <div><div className="font-bold text-slate-500 uppercase mb-1">Demissão</div><div className="font-mono font-bold text-base">{formatDate(parseDate(formData.dataDemissao))}</div></div>
+                            <div><div className="font-bold text-slate-500 uppercase mb-1">Aviso Prévio</div><div className="font-mono font-bold text-base uppercase">{formData.avisoTipo}</div></div>
+                            <div><div className="font-bold text-slate-500 uppercase mb-1">Remuneração</div><div className="font-mono font-bold text-base">{formatCurrency(Number(formData.salarioBase) + Number(formData.insalubridade))}</div></div>
                         </div>
-                    </div>
 
-                    {/* Resumo */}
-                    <div className="bg-slate-100 border border-slate-300 rounded p-4 mb-6 grid grid-cols-4 gap-4 text-xs">
-                        <div><div className="font-bold text-slate-500 uppercase mb-1">Admissão</div><div className="font-mono font-bold text-base">{formatDate(parseDate(formData.dataAdmissao))}</div></div>
-                        <div><div className="font-bold text-slate-500 uppercase mb-1">Demissão</div><div className="font-mono font-bold text-base">{formatDate(parseDate(formData.dataDemissao))}</div></div>
-                        <div><div className="font-bold text-slate-500 uppercase mb-1">Aviso Prévio</div><div className="font-mono font-bold text-base uppercase">{formData.avisoTipo}</div></div>
-                        <div><div className="font-bold text-slate-500 uppercase mb-1">Remuneração</div><div className="font-mono font-bold text-base">{formatCurrency(Number(formData.salarioBase) + Number(formData.insalubridade))}</div></div>
-                    </div>
-
-                    {/* Tabela de Verbas */}
-                    <table className="w-full text-sm text-left mb-6 border-collapse">
-                        <thead className="bg-slate-800 text-white text-xs uppercase">
-                            <tr>
-                                <th className="p-2 border border-slate-800">Rubrica</th>
-                                <th className="p-2 border border-slate-800 text-center w-24">Ref.</th>
-                                <th className="p-2 border border-slate-800 text-right w-32">Proventos</th>
-                                <th className="p-2 border border-slate-800 text-right w-32">Descontos</th>
-                            </tr>
-                        </thead>
-                        <tbody className="text-xs">
-                            {/* Proventos */}
-                            <tr className="border-b border-slate-200">
-                                <td className="p-2">Saldo de Salário</td>
-                                <td className="p-2 text-center text-slate-500">{calculo.diasTrabalhados}d</td>
-                                <td className="p-2 text-right font-mono">{formatCurrency(calculo.saldoSalario)}</td>
-                                <td className="p-2 text-right font-mono"></td>
-                            </tr>
-                            {calculo.valorAviso > 0 && (
-                            <tr className="border-b border-slate-200 bg-slate-50">
-                                <td className="p-2">Aviso Prévio</td>
-                                <td className="p-2 text-center text-slate-500">{calculo.diasAviso}d</td>
-                                <td className="p-2 text-right font-mono">{formatCurrency(calculo.valorAviso)}</td>
-                                <td className="p-2 text-right font-mono"></td>
-                            </tr>
-                            )}
-                            <tr className="border-b border-slate-200">
-                                <td className="p-2">13º Salário Proporcional</td>
-                                <td className="p-2 text-center text-slate-500">{calculo.avos13}/12</td>
-                                <td className="p-2 text-right font-mono">{formatCurrency(calculo.valor13)}</td>
-                                <td className="p-2 text-right font-mono"></td>
-                            </tr>
-                            {calculo.valor13Indenizado > 0 && (
-                            <tr className="border-b border-slate-200 bg-slate-50">
-                                <td className="p-2">13º Salário s/ Aviso Indenizado</td>
-                                <td className="p-2 text-center text-slate-500">-</td>
-                                <td className="p-2 text-right font-mono">{formatCurrency(calculo.valor13Indenizado)}</td>
-                                <td className="p-2 text-right font-mono"></td>
-                            </tr>
-                            )}
-                            {calculo.valorFeriasVencidas > 0 && (
-                            <tr className="border-b border-slate-200">
-                                <td className="p-2">Férias Vencidas</td>
-                                <td className="p-2 text-center text-slate-500">-</td>
-                                <td className="p-2 text-right font-mono">{formatCurrency(calculo.valorFeriasVencidas)}</td>
-                                <td className="p-2 text-right font-mono"></td>
-                            </tr>
-                            )}
-                            {calculo.tercoFeriasVencidas > 0 && (
-                            <tr className="border-b border-slate-200 bg-slate-50">
-                                <td className="p-2">1/3 Férias Vencidas</td>
-                                <td className="p-2 text-center text-slate-500">1/3</td>
-                                <td className="p-2 text-right font-mono">{formatCurrency(calculo.tercoFeriasVencidas)}</td>
-                                <td className="p-2 text-right font-mono"></td>
-                            </tr>
-                            )}
-                            <tr className="border-b border-slate-200">
-                                <td className="p-2">Férias Proporcionais</td>
-                                <td className="p-2 text-center text-slate-500">{calculo.avosFerias}/12</td>
-                                <td className="p-2 text-right font-mono">{formatCurrency(calculo.valorFeriasProp)}</td>
-                                <td className="p-2 text-right font-mono"></td>
-                            </tr>
-                            <tr className="border-b border-slate-200 bg-slate-50">
-                                <td className="p-2">1/3 Férias Proporcionais</td>
-                                <td className="p-2 text-center text-slate-500">1/3</td>
-                                <td className="p-2 text-right font-mono">{formatCurrency(calculo.tercoFeriasProp)}</td>
-                                <td className="p-2 text-right font-mono"></td>
-                            </tr>
-                            {calculo.valorFeriasIndenizado > 0 && (
-                            <tr className="border-b border-slate-200">
-                                <td className="p-2">Férias s/ Aviso Indenizado</td>
-                                <td className="p-2 text-center text-slate-500">-</td>
-                                <td className="p-2 text-right font-mono">{formatCurrency(calculo.valorFeriasIndenizado)}</td>
-                                <td className="p-2 text-right font-mono"></td>
-                            </tr>
-                            )}
-                             {calculo.tercoFeriasIndenizado > 0 && (
-                            <tr className="border-b border-slate-200 bg-slate-50">
-                                <td className="p-2">1/3 s/ Férias Indenizadas</td>
-                                <td className="p-2 text-center text-slate-500">1/3</td>
-                                <td className="p-2 text-right font-mono">{formatCurrency(calculo.tercoFeriasIndenizado)}</td>
-                                <td className="p-2 text-right font-mono"></td>
-                            </tr>
-                            )}
-                            
-                            {/* Ajustes Proventos */}
-                            {ajustes.filter(a => a.tipo === 'Provento').map((aj, idx) => (
-                                <tr key={`prov-${idx}`} className="border-b border-slate-200">
-                                    <td className="p-2 text-indigo-700">{aj.descricao}</td>
-                                    <td className="p-2 text-center text-slate-500">Manual</td>
-                                    <td className="p-2 text-right font-mono">{formatCurrency(aj.valor)}</td>
+                        {/* Tabela de Verbas */}
+                        <table className="w-full text-sm text-left mb-6 border-collapse">
+                            <thead className="bg-slate-800 text-white text-xs uppercase">
+                                <tr>
+                                    <th className="p-2 border border-slate-800">Rubrica</th>
+                                    <th className="p-2 border border-slate-800 text-center w-24">Ref.</th>
+                                    <th className="p-2 border border-slate-800 text-right w-32">Proventos</th>
+                                    <th className="p-2 border border-slate-800 text-right w-32">Descontos</th>
+                                </tr>
+                            </thead>
+                            <tbody className="text-xs">
+                                {/* Proventos */}
+                                <tr className="border-b border-slate-200">
+                                    <td className="p-2">Saldo de Salário</td>
+                                    <td className="p-2 text-center text-slate-500">{calculo.diasTrabalhados}d</td>
+                                    <td className="p-2 text-right font-mono">{formatCurrency(calculo.saldoSalario)}</td>
                                     <td className="p-2 text-right font-mono"></td>
                                 </tr>
-                            ))}
-
-                            {/* Descontos */}
-                            <tr className="border-b border-slate-200 text-red-700">
-                                <td className="p-2">INSS</td>
-                                <td className="p-2 text-center text-slate-500">Desc.</td>
-                                <td className="p-2 text-right font-mono"></td>
-                                <td className="p-2 text-right font-mono">{formatCurrency(calculo.descontoINSS)}</td>
-                            </tr>
-                            {ajustes.filter(a => a.tipo === 'Desconto').map((aj, idx) => (
-                                <tr key={`desc-${idx}`} className="border-b border-slate-200 text-red-700">
-                                    <td className="p-2">{aj.descricao}</td>
-                                    <td className="p-2 text-center text-slate-500">Manual</td>
+                                {calculo.valorAviso > 0 && (
+                                <tr className="border-b border-slate-200 bg-slate-50">
+                                    <td className="p-2">Aviso Prévio</td>
+                                    <td className="p-2 text-center text-slate-500">{calculo.diasAviso}d</td>
+                                    <td className="p-2 text-right font-mono">{formatCurrency(calculo.valorAviso)}</td>
                                     <td className="p-2 text-right font-mono"></td>
-                                    <td className="p-2 text-right font-mono">{formatCurrency(aj.valor)}</td>
                                 </tr>
-                            ))}
-                        </tbody>
-                        <tfoot className="bg-slate-100 font-bold border-t-2 border-slate-300">
-                             <tr>
-                                <td className="p-3" colSpan={2}>TOTAIS</td>
-                                <td className="p-3 text-right text-slate-800">{formatCurrency((calculo.rescisaoLiquida + calculo.descontoINSS + ajustes.filter((a: any) => a.tipo === 'Desconto').reduce((acc: number, c: any) => acc + c.valor, 0)))}</td>
-                                <td className="p-3 text-right text-red-600">{formatCurrency(calculo.descontoINSS + ajustes.filter((a: any) => a.tipo === 'Desconto').reduce((acc: number, c: any) => acc + c.valor, 0))}</td>
-                            </tr>
-                        </tfoot>
-                    </table>
+                                )}
+                                <tr className="border-b border-slate-200">
+                                    <td className="p-2">13º Salário Proporcional</td>
+                                    <td className="p-2 text-center text-slate-500">{calculo.avos13}/12</td>
+                                    <td className="p-2 text-right font-mono">{formatCurrency(calculo.valor13)}</td>
+                                    <td className="p-2 text-right font-mono"></td>
+                                </tr>
+                                {calculo.valor13Indenizado > 0 && (
+                                <tr className="border-b border-slate-200 bg-slate-50">
+                                    <td className="p-2">13º Salário s/ Aviso Indenizado</td>
+                                    <td className="p-2 text-center text-slate-500">-</td>
+                                    <td className="p-2 text-right font-mono">{formatCurrency(calculo.valor13Indenizado)}</td>
+                                    <td className="p-2 text-right font-mono"></td>
+                                </tr>
+                                )}
+                                {calculo.valorFeriasVencidas > 0 && (
+                                <tr className="border-b border-slate-200">
+                                    <td className="p-2">Férias Vencidas</td>
+                                    <td className="p-2 text-center text-slate-500">-</td>
+                                    <td className="p-2 text-right font-mono">{formatCurrency(calculo.valorFeriasVencidas)}</td>
+                                    <td className="p-2 text-right font-mono"></td>
+                                </tr>
+                                )}
+                                {calculo.tercoFeriasVencidas > 0 && (
+                                <tr className="border-b border-slate-200 bg-slate-50">
+                                    <td className="p-2">1/3 Férias Vencidas</td>
+                                    <td className="p-2 text-center text-slate-500">1/3</td>
+                                    <td className="p-2 text-right font-mono">{formatCurrency(calculo.tercoFeriasVencidas)}</td>
+                                    <td className="p-2 text-right font-mono"></td>
+                                </tr>
+                                )}
+                                <tr className="border-b border-slate-200">
+                                    <td className="p-2">Férias Proporcionais</td>
+                                    <td className="p-2 text-center text-slate-500">{calculo.avosFerias}/12</td>
+                                    <td className="p-2 text-right font-mono">{formatCurrency(calculo.valorFeriasProp)}</td>
+                                    <td className="p-2 text-right font-mono"></td>
+                                </tr>
+                                <tr className="border-b border-slate-200 bg-slate-50">
+                                    <td className="p-2">1/3 Férias Proporcionais</td>
+                                    <td className="p-2 text-center text-slate-500">1/3</td>
+                                    <td className="p-2 text-right font-mono">{formatCurrency(calculo.tercoFeriasProp)}</td>
+                                    <td className="p-2 text-right font-mono"></td>
+                                </tr>
+                                {calculo.valorFeriasIndenizado > 0 && (
+                                <tr className="border-b border-slate-200">
+                                    <td className="p-2">Férias s/ Aviso Indenizado</td>
+                                    <td className="p-2 text-center text-slate-500">-</td>
+                                    <td className="p-2 text-right font-mono">{formatCurrency(calculo.valorFeriasIndenizado)}</td>
+                                    <td className="p-2 text-right font-mono"></td>
+                                </tr>
+                                )}
+                                {calculo.tercoFeriasIndenizado > 0 && (
+                                <tr className="border-b border-slate-200 bg-slate-50">
+                                    <td className="p-2">1/3 s/ Férias Indenizadas</td>
+                                    <td className="p-2 text-center text-slate-500">1/3</td>
+                                    <td className="p-2 text-right font-mono">{formatCurrency(calculo.tercoFeriasIndenizado)}</td>
+                                    <td className="p-2 text-right font-mono"></td>
+                                </tr>
+                                )}
+                                
+                                {/* Ajustes Proventos */}
+                                {ajustes.filter(a => a.tipo === 'Provento').map((aj, idx) => (
+                                    <tr key={`prov-${idx}`} className="border-b border-slate-200">
+                                        <td className="p-2 text-indigo-700">{aj.descricao}</td>
+                                        <td className="p-2 text-center text-slate-500">Manual</td>
+                                        <td className="p-2 text-right font-mono">{formatCurrency(aj.valor)}</td>
+                                        <td className="p-2 text-right font-mono"></td>
+                                    </tr>
+                                ))}
 
-                    {/* Resumo FGTS */}
-                    <div className="mb-6 p-4 bg-slate-50 border border-slate-200 rounded text-xs">
-                        <h3 className="font-bold text-slate-700 uppercase mb-2 border-b border-slate-200 pb-1">Demonstrativo FGTS</h3>
-                        <div className="grid grid-cols-2 gap-x-8 gap-y-1">
-                            <div className="flex justify-between"><span>Base de Cálculo (Fins Rescisórios):</span> <span className="font-mono font-semibold">{formatCurrency(calculo.saldoFGTSBase + calculo.fgtsRescisao + calculo.fgtsAvisoIndenizado)}</span></div>
-                            <div className="flex justify-between"><span>Multa Rescisória (40%):</span> <span className="font-mono font-semibold">{formatCurrency(calculo.multa40)}</span></div>
-                            <div className="flex justify-between border-t border-slate-200 pt-1 mt-1 font-bold text-slate-800 col-span-2"><span>Total FGTS a Depositar:</span> <span className="font-mono text-sm">{formatCurrency(calculo.totalContaFGTS)}</span></div>
+                                {/* Descontos */}
+                                <tr className="border-b border-slate-200 text-red-700">
+                                    <td className="p-2">INSS</td>
+                                    <td className="p-2 text-center text-slate-500">Desc.</td>
+                                    <td className="p-2 text-right font-mono"></td>
+                                    <td className="p-2 text-right font-mono">{formatCurrency(calculo.descontoINSS)}</td>
+                                </tr>
+                                {ajustes.filter(a => a.tipo === 'Desconto').map((aj, idx) => (
+                                    <tr key={`desc-${idx}`} className="border-b border-slate-200 text-red-700">
+                                        <td className="p-2">{aj.descricao}</td>
+                                        <td className="p-2 text-center text-slate-500">Manual</td>
+                                        <td className="p-2 text-right font-mono"></td>
+                                        <td className="p-2 text-right font-mono">{formatCurrency(aj.valor)}</td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                            <tfoot className="bg-slate-100 font-bold border-t-2 border-slate-300">
+                                <tr>
+                                    <td className="p-3" colSpan={2}>TOTAIS</td>
+                                    <td className="p-3 text-right text-slate-800">{formatCurrency((calculo.rescisaoLiquida + calculo.descontoINSS + ajustes.filter((a: any) => a.tipo === 'Desconto').reduce((acc: number, c: any) => acc + c.valor, 0)))}</td>
+                                    <td className="p-3 text-right text-red-600">{formatCurrency(calculo.descontoINSS + ajustes.filter((a: any) => a.tipo === 'Desconto').reduce((acc: number, c: any) => acc + c.valor, 0))}</td>
+                                </tr>
+                            </tfoot>
+                        </table>
+
+                        {/* Resumo FGTS */}
+                        <div className="mb-6 p-4 bg-slate-50 border border-slate-200 rounded text-xs">
+                            <h3 className="font-bold text-slate-700 uppercase mb-2 border-b border-slate-200 pb-1">Demonstrativo FGTS</h3>
+                            <div className="grid grid-cols-2 gap-x-8 gap-y-1">
+                                <div className="flex justify-between"><span>Base de Cálculo (Fins Rescisórios):</span> <span className="font-mono font-semibold">{formatCurrency(calculo.saldoFGTSBase + calculo.fgtsRescisao + calculo.fgtsAvisoIndenizado)}</span></div>
+                                <div className="flex justify-between"><span>Multa Rescisória (40%):</span> <span className="font-mono font-semibold">{formatCurrency(calculo.multa40)}</span></div>
+                                <div className="flex justify-between border-t border-slate-200 pt-1 mt-1 font-bold text-slate-800 col-span-2"><span>Total FGTS a Depositar:</span> <span className="font-mono text-sm">{formatCurrency(calculo.totalContaFGTS)}</span></div>
+                            </div>
+                        </div>
+
+                        {/* TOTAL GERAL BOX */}
+                        <div className="mb-8">
+                            {/* ADIÇÃO: Linha de Rescisão Líquida */}
+                            <div className="flex justify-end items-center mb-2 px-4 gap-4">
+                                <span className="text-sm font-bold text-slate-500 uppercase">Rescisão Líquida a Receber</span>
+                                <span className="text-lg font-mono font-bold text-slate-700">{formatCurrency(calculo.rescisaoLiquida)}</span>
+                            </div>
+
+                            <div className="border-2 border-slate-800 p-4 flex justify-between items-center bg-slate-50">
+                                <div>
+                                    <div className="text-xs font-bold uppercase text-slate-500">Total Geral a Receber</div>
+                                    <div className="text-[10px] text-slate-400">Rescisão Líquida + Total FGTS</div>
+                                </div>
+                                <div className="text-3xl font-bold text-slate-900 font-mono">{formatCurrency(calculo.totalGeral)}</div>
+                            </div>
                         </div>
                     </div>
 
-                    {/* TOTAL GERAL BOX */}
-                    <div className="border-2 border-slate-800 p-4 mb-12 flex justify-between items-center bg-slate-50">
-                        <div>
-                            <div className="text-xs font-bold uppercase text-slate-500">Total Geral a Receber</div>
-                            <div className="text-[10px] text-slate-400">Rescisão Líquida + Total FGTS</div>
+                    {/* RODAPÉ E ASSINATURAS - Usando mt-auto (flex) para ficar no final */}
+                    <div className="mt-auto">
+                        {printSignatures && (
+                        <div className="grid grid-cols-2 gap-12 pt-8 border-t border-slate-200 mb-8">
+                            <div className="text-center">
+                                <div className="h-10"></div>
+                                <div className="border-t border-slate-400 pt-2 font-bold text-xs uppercase">Assinatura do Empregador</div>
+                            </div>
+                            <div className="text-center">
+                                <div className="h-10"></div>
+                                <div className="border-t border-slate-400 pt-2 font-bold text-xs uppercase">Assinatura do Empregado</div>
+                            </div>
                         </div>
-                        <div className="text-3xl font-bold text-slate-900 font-mono">{formatCurrency(calculo.totalGeral)}</div>
-                    </div>
+                        )}
 
-                    {/* Assinaturas */}
-                    {printSignatures && (
-                    <div className="grid grid-cols-2 gap-12 pt-8 border-t border-slate-200">
-                        <div className="text-center">
-                            <div className="h-10"></div>
-                            <div className="border-t border-slate-400 pt-2 font-bold text-xs uppercase">Assinatura do Empregador</div>
-                        </div>
-                        <div className="text-center">
-                            <div className="h-10"></div>
-                            <div className="border-t border-slate-400 pt-2 font-bold text-xs uppercase">Assinatura do Empregado</div>
-                        </div>
-                    </div>
-                    )}
-
-                    {/* Rodapé */}
-                    <div className="absolute bottom-[10mm] left-[15mm] right-[15mm] border-t border-slate-200 pt-2 flex items-center gap-2">
-                        <div className="bg-slate-800 text-white w-6 h-6 flex items-center justify-center font-bold text-[10px] rounded">L</div>
-                        <div>
-                            <div className="text-[10px] font-bold uppercase text-slate-800">Lucas Araujo dos Santos</div>
-                            <div className="text-[9px] text-slate-500 uppercase">Contador • CRC-BA: 046968/O-6</div>
+                        <div className="border-t border-slate-200 pt-2 flex items-center gap-2">
+                            <div className="bg-slate-800 text-white w-6 h-6 flex items-center justify-center font-bold text-[10px] rounded">L</div>
+                            <div>
+                                <div className="text-[10px] font-bold uppercase text-slate-800">Lucas Araujo dos Santos</div>
+                                <div className="text-[9px] text-slate-500 uppercase">Contador • CRC-BA: 046968/O-6</div>
+                            </div>
                         </div>
                     </div>
 
