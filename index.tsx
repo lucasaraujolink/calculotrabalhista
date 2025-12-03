@@ -595,7 +595,7 @@ function App() {
                 </div>
 
                 {/* AREA DE IMPRESSAO - Layout Tabela Formal - COM CORREÇÃO DE FOOTER */}
-                <div id="print-area-container" className="bg-white w-full h-full p-8 shadow-none mx-auto relative text-sm text-slate-900 flex flex-col justify-between">
+                <div id="print-area-container" className="bg-white w-full h-full p-8 shadow-none mx-auto relative text-sm text-slate-900 flex flex-col justify-between print:p-8">
                     
                     <div className="print-content-wrapper">
                         {/* Header */}
@@ -781,11 +781,11 @@ function App() {
                         </div>
                         )}
 
-                        <div className="border-t border-slate-200 pt-2 flex items-center gap-2">
-                            <div className="bg-slate-800 text-white w-6 h-6 flex items-center justify-center font-bold text-[10px] rounded">L</div>
+                        <div className="border-t border-slate-200 pt-4 flex items-center gap-3">
+                            <div className="bg-slate-800 text-white w-10 h-10 flex items-center justify-center font-bold text-lg rounded">L</div>
                             <div>
-                                <div className="text-[10px] font-bold uppercase text-slate-800">Lucas Araujo dos Santos</div>
-                                <div className="text-[9px] text-slate-500 uppercase">Contador • CRC-BA: 046968/O-6</div>
+                                <div className="text-sm font-bold uppercase text-slate-800">Lucas Araujo dos Santos</div>
+                                <div className="text-xs text-slate-500 uppercase">Contador • CRC-BA: 046968/O-6</div>
                             </div>
                         </div>
                     </div>
