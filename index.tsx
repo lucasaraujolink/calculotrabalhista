@@ -95,14 +95,6 @@ const calcularINSS = (baseCalculo: number) => {
     desconto = (faixa1 * 0.075) + ((faixa2 - faixa1) * 0.09) + ((faixa3 - faixa2) * 0.12) + ((base - faixa3) * 0.14);
   }
   
-  // Deduzir parcela a deduzir implícita no cálculo progressivo
-  // Faixa 1: 0
-  // Faixa 2: 22.77
-  // Faixa 3: 106.59
-  // Faixa 4: 190.40
-  // O cálculo acima já faz a progressão, então não precisa subtrair a parcela explicitamente se feito por faixas.
-  // Porém, a lógica acima soma os pedaços.
-
   return Math.round(desconto * 100) / 100;
 };
 
@@ -125,23 +117,22 @@ const Card = ({ children, className = "", title = "", icon = "", delay = "", act
     className={`bg-white rounded-xl shadow-sm border overflow-hidden ${className} 
     ${delay ? 'animate-slide-up ' + delay : ''} 
     ${onClick ? 'cursor-pointer hover:border-indigo-300 transition-colors' : 'border-slate-100'} 
-    ${highlight ? 'ring-2 ring-indigo-500 shadow-md' : ''}
-    print:shadow-none print:border-slate-300 print:rounded-lg print:break-inside-avoid print:mb-2`}
+    ${highlight ? 'ring-2 ring-indigo-500 shadow-md' : ''}`}
   >
     {(title || icon) && (
-      <div className={`px-5 py-3 border-b flex justify-between items-center ${highlight ? 'bg-indigo-50 border-indigo-100' : 'bg-gradient-to-r from-slate-50 to-white border-slate-50'} print:py-1 print:px-3 print:bg-slate-100 print:border-slate-300`}>
+      <div className={`px-5 py-3 border-b flex justify-between items-center ${highlight ? 'bg-indigo-50 border-indigo-100' : 'bg-gradient-to-r from-slate-50 to-white border-slate-50'}`}>
         <div className="flex items-center gap-2">
             {icon && (
-            <div className={`p-1.5 rounded-lg ${highlight ? 'bg-white text-indigo-600' : 'bg-indigo-50 text-indigo-600'} print:hidden`}>
+            <div className={`p-1.5 rounded-lg ${highlight ? 'bg-white text-indigo-600' : 'bg-indigo-50 text-indigo-600'}`}>
                 <span className="material-icons-round text-lg block">{icon}</span>
             </div>
             )}
-            <h3 className={`font-semibold text-sm ${highlight ? 'text-indigo-800' : 'text-slate-700'} print:text-xs print:font-bold print:uppercase`}>{title}</h3>
+            <h3 className={`font-semibold text-sm ${highlight ? 'text-indigo-800' : 'text-slate-700'}`}>{title}</h3>
         </div>
-        {action && <div className="print:hidden">{action}</div>}
+        {action && <div>{action}</div>}
       </div>
     )}
-    <div className="p-5 print:p-2">{children}</div>
+    <div className="p-5">{children}</div>
   </div>
 );
 
@@ -159,14 +150,13 @@ const ResultRow = ({ label, value, subtext = "", isNegative = false, isTotal = f
 
   return (
     <div className={`flex justify-between items-start py-2 px-1 rounded transition-colors hover:bg-slate-50 
-      ${isTotal ? 'border-t-2 border-dashed border-slate-200 mt-2 pt-2' : 'border-b border-slate-50 last:border-0'} 
-      print:py-1 print:border-slate-200 print:text-[10px]`}>
+      ${isTotal ? 'border-t-2 border-dashed border-slate-200 mt-2 pt-2' : 'border-b border-slate-50 last:border-0'}`}>
       <div>
-        <div className={`${isTotal ? 'font-bold text-slate-900 text-base' : 'font-medium text-slate-600'} print:text-slate-800`}>{label}</div>
-        {subtext && <div className="text-xs text-slate-400 print:text-[9px] print:text-slate-500">{subtext}</div>}
+        <div className={`${isTotal ? 'font-bold text-slate-900 text-base' : 'font-medium text-slate-600'}`}>{label}</div>
+        {subtext && <div className="text-xs text-slate-400">{subtext}</div>}
       </div>
       <div className={`font-mono ${isTotal ? 'text-lg font-bold' : 'font-medium'} 
-        ${isNegative ? 'text-red-500' : isTotal ? 'text-indigo-600 print:text-slate-900' : 'text-slate-700'}`}>
+        ${isNegative ? 'text-red-500' : isTotal ? 'text-indigo-600' : 'text-slate-700'}`}>
         {isNegative ? '-' : ''} {formatCurrency(value)}
       </div>
     </div>
@@ -223,7 +213,7 @@ function App() {
   
   // FGTS State
   const [fgtsManualData, setFgtsManualData] = useState<{date: string, value: number}[]>([]);
-  const [fgtsSaldoManual, setFgtsSaldoManual] = useState<number | ''>(''); // Novo estado para saldo manual
+  const [fgtsSaldoManual, setFgtsSaldoManual] = useState<number | ''>('');
 
   // Adjustments State
   const [ajustes, setAjustes] = useState<{descricao: string, valor: number, tipo: 'Provento' | 'Desconto'}[]>([]);
@@ -267,7 +257,7 @@ function App() {
     // 1. Aviso Prévio
     let diasAviso = 30;
     const anosTrabalhados = Math.floor(diffDays(demissao, admissao) / 365.25);
-    diasAviso += Math.min(anosTrabalhados * 3, 60); // Max 90 total (30 + 60)
+    diasAviso += Math.min(anosTrabalhados * 3, 60);
     
     let valorAviso = 0;
     const projecaoAviso = new Date(demissao);
@@ -276,7 +266,6 @@ function App() {
     if (formData.avisoTipo === 'indenizado') {
         valorAviso = (salarioTotal / 30) * diasAviso;
     } else {
-        // Trabalhado: indeniza apenas os dias extras da lei (3 dias por ano)
         const diasIndenizados = diasAviso - 30;
         if (diasIndenizados > 0) {
             valorAviso = (salarioTotal / 30) * diasIndenizados;
@@ -284,115 +273,56 @@ function App() {
     }
 
     // 2. Saldo de Salário
-    // Dias trabalhados no mês da demissão
-    const ultimoDiaMesAnterior = new Date(demissao.getFullYear(), demissao.getMonth(), 0).getDate();
-    // Se trabalhou o mês todo (ex: dia 30 ou 31), considera 30 dias para cálculo comercial
     let diasTrabalhados = demissao.getDate();
     if (diasTrabalhados === 31) diasTrabalhados = 30; 
-    
     const saldoSalario = (salarioTotal / 30) * diasTrabalhados;
 
-    // 3. 13º Salário Proporcional
+    // 3. 13º Salário
     const calcularAvos13 = (inicio: Date, fim: Date) => {
         let avos = 0;
         let current = new Date(inicio.getFullYear(), inicio.getMonth(), 1);
-        
-        // Se a admissão foi no mesmo ano da demissão
         if (inicio.getFullYear() === fim.getFullYear()) {
-             // Lógica mês a mês
              while(current <= fim) {
                  const ultimoDiaMes = new Date(current.getFullYear(), current.getMonth() + 1, 0).getDate();
                  let diasTrabNoMes = 30;
-                 
-                 // Mês de admissão
                  if (current.getMonth() === inicio.getMonth() && current.getFullYear() === inicio.getFullYear()) {
                      diasTrabNoMes = 30 - inicio.getDate() + 1;
-                     if (inicio.getDate() === 31) diasTrabNoMes = 0; // Ajuste simplificado
+                     if (inicio.getDate() === 31) diasTrabNoMes = 0;
                  }
-                 // Mês de demissão
                  if (current.getMonth() === fim.getMonth() && current.getFullYear() === fim.getFullYear()) {
                      diasTrabNoMes = fim.getDate();
                      if (fim.getDate() === 31) diasTrabNoMes = 30;
                  }
-                 
                  if (diasTrabNoMes >= 15) avos++;
                  current.setMonth(current.getMonth() + 1);
              }
              return avos;
         } 
-        
-        // Se anos diferentes, conta meses do ano da demissão
         const inicioAno = new Date(fim.getFullYear(), 0, 1);
-        let meses = fim.getMonth(); // Janeiro=0, então se demitido em Março(2), trabalhou Jan e Fev inteiros
-        
-        // Verifica o mês da demissão
+        let meses = fim.getMonth(); 
         if (fim.getDate() >= 15) meses++;
-        
         return meses;
     };
-
     const avos13 = calcularAvos13(admissao, demissao);
     const valor13 = (salarioTotal / 12) * avos13;
 
     // 4. Férias
-    // Férias vencidas
-    const valorFeriasVencidas = feriasVencidasQtd * salarioTotal; // Assumindo qtd = periodos
+    const valorFeriasVencidas = feriasVencidasQtd * salarioTotal;
     const tercoFeriasVencidas = valorFeriasVencidas / 3;
 
-    // Férias Proporcionais
-    // Calcula data início do período aquisitivo atual
     let inicioPeriodoAquisitivo = new Date(admissao);
     while (new Date(inicioPeriodoAquisitivo.getFullYear() + 1, inicioPeriodoAquisitivo.getMonth(), inicioPeriodoAquisitivo.getDate()) <= demissao) {
         inicioPeriodoAquisitivo.setFullYear(inicioPeriodoAquisitivo.getFullYear() + 1);
     }
     
-    // Contar meses entre início do periodo e demissão
-    let avosFerias = 0;
-    let cursor = new Date(inicioPeriodoAquisitivo);
-    // Avança mês a mês
-    while (cursor < demissao) {
-         // Próximo mês do aniversário
-         let proximoMes = new Date(cursor);
-         proximoMes.setMonth(proximoMes.getMonth() + 1);
-         
-         // Se o intervalo até a demissão for maior que 14 dias dentro desse "mês aquisitivo"
-         // Lógica simplificada: Conta meses cheios + mês incompleto se >= 15 dias
-         avosFerias++;
-         cursor = proximoMes;
-    }
-    
-    // Ajuste fino para a fração final
-    // Recalcula usando a lógica padrão de rescisão:
-    // Meses inteiros do período + mês demissão se >= 15 dias
-    const mesesDiferenca = (demissao.getFullYear() - inicioPeriodoAquisitivo.getFullYear()) * 12 + (demissao.getMonth() - inicioPeriodoAquisitivo.getMonth());
-    avosFerias = mesesDiferenca;
-    
-    // Verifica dias do último mês incompleto relativo ao dia da admissão
-    // Ex: Admissão dia 10. Demissão dia 20. 20-10 = 10 dias. Não conta.
-    // Ex: Admissão dia 05. Demissão dia 25. 25-05 = 20 dias. Conta.
-    let diaAdmissao = admissao.getDate();
-    let diaDemissao = demissao.getDate();
-    
-    // Se demissão antes do dia da admissão no mês, verifica quantos dias se passaram desde o "aniversário" mensal
-    // Na prática contábil simplificada: conta-se meses calendário a partir da admissão.
-    // Se demissão dia >= 15, considera o mês. 
-    // Vamos usar a lógica de contagem de avos baseada em datas cheias.
-    
-    // Refazendo lógica robusta de Avos de Férias:
     let avosFeriasCalc = 0;
     let dataCursor = new Date(inicioPeriodoAquisitivo);
     while (dataCursor < demissao) {
         let fimMesAquisitivo = new Date(dataCursor);
         fimMesAquisitivo.setMonth(fimMesAquisitivo.getMonth() + 1);
-        
-        // Limita ao dia da demissão
         let limite = fimMesAquisitivo > demissao ? demissao : fimMesAquisitivo;
-        
-        // Diferença em dias
         const diff = diffDays(limite, dataCursor);
-        if (diff >= 14) { // Pela CLT, fração superior a 14 dias
-            avosFeriasCalc++;
-        }
+        if (diff >= 14) avosFeriasCalc++;
         dataCursor.setMonth(dataCursor.getMonth() + 1);
     }
     if (avosFeriasCalc > 12) avosFeriasCalc = 12;
@@ -400,20 +330,16 @@ function App() {
     const valorFeriasProp = (salarioTotal / 12) * avosFeriasCalc;
     const tercoFeriasProp = valorFeriasProp / 3;
 
-    // 5. Indenizações sobre Aviso Prévio (Diferença de Avos)
+    // 5. Indenizações (Projeção)
     let valor13Indenizado = 0;
     let valorFeriasIndenizado = 0;
     let tercoFeriasIndenizado = 0;
     
     if (formData.avisoTipo === 'indenizado') {
-        // Avos com projeção
         const avos13ComProjecao = calcularAvos13(admissao, projecaoAviso);
         const diffAvos13 = Math.max(0, avos13ComProjecao - avos13);
-        if (diffAvos13 > 0) {
-            valor13Indenizado = (salarioTotal / 12) * diffAvos13;
-        }
+        if (diffAvos13 > 0) valor13Indenizado = (salarioTotal / 12) * diffAvos13;
 
-        // Avos férias com projeção
         let avosFeriasProj = 0;
         let cursorProj = new Date(inicioPeriodoAquisitivo);
         while (cursorProj < projecaoAviso) {
@@ -423,9 +349,7 @@ function App() {
             if (diffDays(limite, cursorProj) >= 14) avosFeriasProj++;
             cursorProj.setMonth(cursorProj.getMonth() + 1);
         }
-        if (avosFeriasProj > 12) avosFeriasProj = 12; // Cap anual
-        // Pode acontecer de mudar o período aquisitivo na projeção.
-        // Simplificação: diferença simples de avos calculados
+        if (avosFeriasProj > 12) avosFeriasProj = 12;
         const diffAvosFerias = Math.max(0, avosFeriasProj - avosFeriasCalc);
         
         if (diffAvosFerias > 0) {
@@ -435,77 +359,41 @@ function App() {
     }
 
     // 6. FGTS
-    // Soma FGTS mês a mês da lista manual ou saldo informado
     let saldoFGTSParaMulta = 0;
-    let fgtsMensalTotal = 0;
     
     if (fgtsSaldoManual !== '') {
-        // Se usuário informou saldo manual, usa ele para a multa
         saldoFGTSParaMulta = Number(fgtsSaldoManual);
-        // Não temos o histórico mês a mês para somar no "Total Rescisão", 
-        // mas a multa será calculada sobre esse saldo.
     } else {
-        // Soma da tabela
         saldoFGTSParaMulta = fgtsManualData.reduce((acc, curr) => acc + curr.value, 0);
-        fgtsMensalTotal = saldoFGTSParaMulta;
     }
 
-    // FGTS da Rescisão (sobre verbas salariais)
     const baseFGTSRescisao = saldoSalario + valor13 + (formData.avisoTipo === 'trabalhado' ? valorAviso : 0);
     const fgtsRescisao = baseFGTSRescisao * 0.08;
     
-    // FGTS sobre Aviso Indenizado
     const baseFGTSAvisoIndenizado = formData.avisoTipo === 'indenizado' ? valorAviso + valor13Indenizado : 0;
     const fgtsAvisoIndenizado = baseFGTSAvisoIndenizado * 0.08;
 
-    // Total base para multa = Saldo Banco + FGTS Rescisão + FGTS Aviso Indenizado
     const baseTotalMulta = saldoFGTSParaMulta + fgtsRescisao + fgtsAvisoIndenizado;
     const multa40 = baseTotalMulta * 0.4;
-    
-    const totalContaFGTS = baseTotalMulta + multa40; // O que vai estar na conta do trabalhador
+    const totalContaFGTS = baseTotalMulta + multa40;
 
-    // 7. Descontos (INSS)
-    // Base INSS: Saldo Salário + 13º + Aviso Trabalhado
-    // Aviso Indenizado não incide INSS (regra geral atual STJ, embora varie interpretação, padrão é não)
-    // 13º Indenizado incide INSS? Não.
-    // Férias indenizadas não incide.
-    const baseINSS = saldoSalario + valor13; // Simplificação
+    // 7. Descontos
+    const baseINSS = saldoSalario + valor13;
     const descontoINSS = calcularINSS(baseINSS);
 
     // 8. Totais
     const totalProventos = saldoSalario + valorAviso + valor13 + valorFeriasVencidas + tercoFeriasVencidas + valorFeriasProp + tercoFeriasProp + valor13Indenizado + valorFeriasIndenizado + tercoFeriasIndenizado;
-    
-    // Somar ajustes
     const totalAjustesProventos = ajustes.filter(a => a.tipo === 'Provento').reduce((acc, c) => acc + c.valor, 0);
     const totalAjustesDescontos = ajustes.filter(a => a.tipo === 'Desconto').reduce((acc, c) => acc + c.valor, 0);
-
     const rescisaoLiquida = (totalProventos + totalAjustesProventos) - (descontoINSS + totalAjustesDescontos);
-    const totalGeral = rescisaoLiquida + totalContaFGTS; // Líquido + FGTS GRRF
+    const totalGeral = rescisaoLiquida + totalContaFGTS;
 
     setCalculo({
-        saldoSalario,
-        diasTrabalhados,
-        valorAviso,
-        diasAviso,
-        projecaoAviso,
-        valor13,
-        avos13,
-        valorFeriasVencidas,
-        tercoFeriasVencidas,
-        valorFeriasProp,
-        tercoFeriasProp,
-        avosFerias: avosFeriasCalc,
-        valor13Indenizado,
-        valorFeriasIndenizado,
-        tercoFeriasIndenizado,
-        fgtsRescisao,
-        fgtsAvisoIndenizado,
-        multa40,
-        totalContaFGTS,
-        saldoFGTSBase: saldoFGTSParaMulta,
-        descontoINSS,
-        rescisaoLiquida,
-        totalGeral
+        saldoSalario, diasTrabalhados, valorAviso, diasAviso, projecaoAviso, valor13, avos13,
+        valorFeriasVencidas, tercoFeriasVencidas, valorFeriasProp, tercoFeriasProp, avosFerias: avosFeriasCalc,
+        valor13Indenizado, valorFeriasIndenizado, tercoFeriasIndenizado,
+        fgtsRescisao, fgtsAvisoIndenizado, multa40, totalContaFGTS, saldoFGTSBase: saldoFGTSParaMulta,
+        descontoINSS, rescisaoLiquida, totalGeral
     });
   };
 
@@ -518,10 +406,10 @@ function App() {
   const preencherSalarioMinimo = () => {
     const newData = fgtsManualData.map(item => ({
         ...item,
-        value: getSalarioMinimo(parseDate(item.date + '-01')) * 0.08 // 8% do mínimo
+        value: getSalarioMinimo(parseDate(item.date + '-01')) * 0.08
     }));
     setFgtsManualData(newData);
-    setFgtsSaldoManual(''); // Limpa saldo manual para usar a tabela
+    setFgtsSaldoManual('');
   };
 
   const addAjuste = (e: React.FormEvent) => {
@@ -530,14 +418,13 @@ function App() {
     const desc = (form.elements.namedItem('descAjuste') as HTMLInputElement).value;
     const val = Number((form.elements.namedItem('valAjuste') as HTMLInputElement).value);
     const tipo = (form.elements.namedItem('tipoAjuste') as HTMLSelectElement).value as 'Provento' | 'Desconto';
-    
     setAjustes([...ajustes, { descricao: desc, valor: val, tipo }]);
     form.reset();
   };
 
   return (
     <div className="min-h-screen pb-12 font-sans text-slate-600 bg-slate-50">
-      <div className="max-w-5xl mx-auto p-4 md:p-8">
+      <div className="max-w-5xl mx-auto p-4 md:p-8 no-print">
         {/* Header */}
         <header className="mb-8 text-center md:text-left">
           <div className="flex items-center gap-3 justify-center md:justify-start mb-2">
@@ -550,68 +437,23 @@ function App() {
         </header>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Coluna Esquerda: Formulário */}
           <div className="lg:col-span-1 space-y-6">
             <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
-                <FormInput 
-                    label="Salário Base (R$)" 
-                    name="salarioBase"
-                    type="number"
-                    value={formData.salarioBase}
-                    onChange={handleInputChange}
-                />
-                <FormInput 
-                    label="Adicional Insalubridade (R$)" 
-                    name="insalubridade"
-                    type="number"
-                    value={formData.insalubridade}
-                    onChange={handleInputChange}
-                />
+                <FormInput label="Salário Base (R$)" name="salarioBase" type="number" value={formData.salarioBase} onChange={handleInputChange} />
+                <FormInput label="Adicional Insalubridade (R$)" name="insalubridade" type="number" value={formData.insalubridade} onChange={handleInputChange} />
                 <div className="grid grid-cols-2 gap-4">
-                    <FormInput 
-                        label="Data Admissão" 
-                        name="dataAdmissao"
-                        type="date"
-                        value={formData.dataAdmissao}
-                        onChange={handleInputChange}
-                    />
-                    <FormInput 
-                        label="Data Demissão" 
-                        name="dataDemissao"
-                        type="date"
-                        value={formData.dataDemissao}
-                        onChange={handleInputChange}
-                    />
+                    <FormInput label="Data Admissão" name="dataAdmissao" type="date" value={formData.dataAdmissao} onChange={handleInputChange} />
+                    <FormInput label="Data Demissão" name="dataDemissao" type="date" value={formData.dataDemissao} onChange={handleInputChange} />
                 </div>
-                <FormInput 
-                    label="Tipo de Aviso Prévio" 
-                    name="avisoTipo"
-                    options={[
-                        { value: 'trabalhado', label: 'Trabalhado' },
-                        { value: 'indenizado', label: 'Indenizado' }
-                    ]}
-                    value={formData.avisoTipo}
-                    onChange={handleInputChange}
-                />
-                <FormInput 
-                    label="Férias Vencidas (Períodos)" 
-                    name="feriasVencidasQtd"
-                    type="number"
-                    value={formData.feriasVencidasQtd}
-                    onChange={handleInputChange}
-                />
+                <FormInput label="Tipo de Aviso Prévio" name="avisoTipo" options={[{ value: 'trabalhado', label: 'Trabalhado' }, { value: 'indenizado', label: 'Indenizado' }]} value={formData.avisoTipo} onChange={handleInputChange} />
+                <FormInput label="Férias Vencidas (Períodos)" name="feriasVencidasQtd" type="number" value={formData.feriasVencidasQtd} onChange={handleInputChange} />
                 
-                <button 
-                    onClick={handleCalcular}
-                    className="w-full mt-4 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white font-bold py-3.5 px-4 rounded-xl shadow-lg shadow-indigo-200 transition-all transform active:scale-95 flex items-center justify-center gap-2"
-                >
-                    <span className="material-icons-round">play_arrow</span>
-                    Calcular Rescisão
+                <button onClick={handleCalcular} className="w-full mt-4 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white font-bold py-3.5 px-4 rounded-xl shadow-lg shadow-indigo-200 transition-all transform active:scale-95 flex items-center justify-center gap-2">
+                    <span className="material-icons-round">play_arrow</span> Calcular Rescisão
                 </button>
             </div>
           </div>
 
-          {/* Coluna Direita: Resultados */}
           <div className="lg:col-span-2">
             {!calculo ? (
                 <div className="h-full flex flex-col items-center justify-center text-slate-300 min-h-[400px] border-2 border-dashed border-slate-200 rounded-2xl">
@@ -620,7 +462,6 @@ function App() {
                 </div>
             ) : (
                 <div className="space-y-6 animate-fade-in">
-                    {/* TOTAIS PRINCIPAIS */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <Card className="bg-gradient-to-br from-indigo-500 to-indigo-600 border-none text-white shadow-xl shadow-indigo-200" delay="delay-100">
                              <div className="text-indigo-100 text-sm font-medium mb-1">Total Geral a Receber</div>
@@ -633,66 +474,34 @@ function App() {
                         </Card>
                     </div>
 
-                    {/* GRUPO FGTS */}
-                    <Card 
-                        title="FGTS + Multa 40%" 
-                        icon="savings" 
-                        delay="delay-300"
-                        onClick={() => setShowFGTSModal(true)}
-                        action={<span className="text-xs font-bold text-indigo-600 bg-indigo-50 px-2 py-1 rounded uppercase">Editar</span>}
-                    >
+                    <Card title="FGTS + Multa 40%" icon="savings" delay="delay-300" onClick={() => setShowFGTSModal(true)} action={<span className="text-xs font-bold text-indigo-600 bg-indigo-50 px-2 py-1 rounded uppercase">Editar</span>}>
                         <ResultRow label="Saldo FGTS Fins Rescisórios" value={calculo.saldoFGTSBase + calculo.fgtsRescisao + calculo.fgtsAvisoIndenizado} subtext="Base para multa" />
                         <ResultRow label="Multa 40%" value={calculo.multa40} />
                         <ResultRow label="Total FGTS (Saque)" value={calculo.totalContaFGTS} isTotal />
                     </Card>
 
-                    {/* DETALHAMENTO */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <Card title="Proventos" icon="add_circle_outline" delay="delay-400"
-                           action={<button onClick={() => setShowAdjustModal(true)} className="text-xs font-bold text-indigo-600 hover:text-indigo-800">AJUSTAR</button>}
-                        >
+                        <Card title="Proventos" icon="add_circle_outline" delay="delay-400" action={<button onClick={() => setShowAdjustModal(true)} className="text-xs font-bold text-indigo-600 hover:text-indigo-800">AJUSTAR</button>}>
                             <ResultRow label="Saldo de Salário" value={calculo.saldoSalario} subtext={`${calculo.diasTrabalhados} dias`} />
                             <ResultRow label="Aviso Prévio" value={calculo.valorAviso} subtext={`${calculo.diasAviso} dias`} hideIfZero />
-                            
-                            {/* Verbas Indenizadas */}
-                            {calculo.valor13Indenizado > 0 && (
-                                <ResultRow label="13º Salário s/ Aviso Prévio Indenizado" value={calculo.valor13Indenizado} subtext="1/12 avos" />
-                            )}
-                            {calculo.valorFeriasIndenizado > 0 && (
-                                <>
-                                    <ResultRow label="Férias s/ Aviso Prévio Indenizado" value={calculo.valorFeriasIndenizado} />
-                                    <ResultRow label="1/3 s/ Férias Indenizadas" value={calculo.tercoFeriasIndenizado} />
-                                </>
-                            )}
-
+                            {calculo.valor13Indenizado > 0 && <ResultRow label="13º Salário s/ Aviso Prévio Indenizado" value={calculo.valor13Indenizado} subtext="1/12 avos" />}
+                            {calculo.valorFeriasIndenizado > 0 && <><ResultRow label="Férias s/ Aviso Prévio Indenizado" value={calculo.valorFeriasIndenizado} /><ResultRow label="1/3 s/ Férias Indenizadas" value={calculo.tercoFeriasIndenizado} /></>}
                             <ResultRow label="13º Salário Proporcional" value={calculo.valor13} subtext={`${calculo.avos13}/12 avos`} />
-                            
                             <ResultRow label="Férias Vencidas" value={calculo.valorFeriasVencidas} hideIfZero />
                             <ResultRow label="1/3 Férias Vencidas" value={calculo.tercoFeriasVencidas} hideIfZero />
-                            
                             <ResultRow label="Férias Proporcionais" value={calculo.valorFeriasProp} subtext={`${calculo.avosFerias}/12 avos`} />
                             <ResultRow label="1/3 Férias Proporcionais" value={calculo.tercoFeriasProp} />
-                            
-                            {ajustes.filter(a => a.tipo === 'Provento').map((aj, idx) => (
-                                <ResultRow key={idx} label={aj.descricao} value={aj.valor} subtext="Manual" />
-                            ))}
+                            {ajustes.filter(a => a.tipo === 'Provento').map((aj, idx) => <ResultRow key={idx} label={aj.descricao} value={aj.valor} subtext="Manual" />)}
                         </Card>
-
                         <Card title="Descontos" icon="remove_circle_outline" delay="delay-500">
                             <ResultRow label="INSS" value={calculo.descontoINSS} isNegative />
-                            {ajustes.filter(a => a.tipo === 'Desconto').map((aj, idx) => (
-                                <ResultRow key={idx} label={aj.descricao} value={aj.valor} subtext="Manual" isNegative />
-                            ))}
+                            {ajustes.filter(a => a.tipo === 'Desconto').map((aj, idx) => <ResultRow key={idx} label={aj.descricao} value={aj.valor} subtext="Manual" isNegative />)}
                         </Card>
                     </div>
 
                     <div className="flex justify-center pt-8">
-                        <button 
-                            onClick={() => setShowPrintModal(true)}
-                            className="bg-slate-800 hover:bg-slate-900 text-white px-8 py-3 rounded-xl shadow-lg flex items-center gap-2 transition-all"
-                        >
-                            <span className="material-icons-round">print</span>
-                            Imprimir Relatório
+                        <button onClick={() => setShowPrintModal(true)} className="bg-slate-800 hover:bg-slate-900 text-white px-8 py-3 rounded-xl shadow-lg flex items-center gap-2 transition-all">
+                            <span className="material-icons-round">print</span> Imprimir Relatório
                         </button>
                     </div>
                 </div>
@@ -701,9 +510,8 @@ function App() {
         </div>
       </div>
 
-      {/* MODAL FGTS */}
       {showFGTSModal && (
-        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4 backdrop-blur-sm animate-fade-in">
+        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4 backdrop-blur-sm animate-fade-in no-print">
             <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col">
                 <div className="p-6 border-b flex justify-between items-center">
                     <h3 className="text-xl font-bold text-slate-800">Ajuste de FGTS</h3>
@@ -712,16 +520,9 @@ function App() {
                 <div className="p-6 overflow-y-auto">
                     <div className="mb-6 bg-indigo-50 p-4 rounded-xl border border-indigo-100">
                         <label className="block text-sm font-bold text-indigo-900 mb-2">Saldo Total para Fins Rescisórios</label>
-                        <input 
-                            type="number" 
-                            className="w-full px-4 py-2 border border-indigo-200 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
-                            placeholder="Informe o saldo total acumulado se preferir não somar mês a mês"
-                            value={fgtsSaldoManual}
-                            onChange={(e) => setFgtsSaldoManual(Number(e.target.value))}
-                        />
+                        <input type="number" className="w-full px-4 py-2 border border-indigo-200 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none" placeholder="Informe o saldo total acumulado se preferir não somar mês a mês" value={fgtsSaldoManual} onChange={(e) => setFgtsSaldoManual(Number(e.target.value))} />
                         <p className="text-xs text-indigo-600 mt-2">* Ao preencher este campo, a tabela abaixo será ignorada para o cálculo da multa.</p>
                     </div>
-                    
                     <div className="flex justify-between items-center mb-4">
                         <h4 className="font-bold text-slate-700">Valores Mensais (8%)</h4>
                         <button onClick={preencherSalarioMinimo} className="text-sm text-indigo-600 font-semibold hover:underline">Preencher com Mínimo</button>
@@ -730,12 +531,7 @@ function App() {
                         {fgtsManualData.map((item, idx) => (
                             <div key={idx}>
                                 <label className="block text-xs font-medium text-slate-500 mb-1">{item.date}</label>
-                                <input 
-                                    type="number" 
-                                    className="w-full px-3 py-1.5 border rounded text-sm"
-                                    value={item.value}
-                                    onChange={(e) => updateFgtsValue(idx, Number(e.target.value))}
-                                />
+                                <input type="number" className="w-full px-3 py-1.5 border rounded text-sm" value={item.value} onChange={(e) => updateFgtsValue(idx, Number(e.target.value))} />
                             </div>
                         ))}
                     </div>
@@ -748,29 +544,19 @@ function App() {
         </div>
       )}
 
-      {/* MODAL AJUSTES */}
       {showAdjustModal && (
-        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
+        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4 backdrop-blur-sm no-print">
             <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
                 <div className="p-6 border-b flex justify-between items-center">
                     <h3 className="text-xl font-bold text-slate-800">Adicionar Ajuste</h3>
                     <button onClick={() => setShowAdjustModal(false)} className="text-slate-400 hover:text-slate-600"><span className="material-icons-round">close</span></button>
                 </div>
                 <form onSubmit={addAjuste} className="p-6 space-y-4">
-                    <div>
-                        <label className="block text-sm font-bold text-slate-700 mb-1">Descrição</label>
-                        <input name="descAjuste" required className="w-full border p-2 rounded-lg" placeholder="Ex: Horas Extras" />
-                    </div>
-                    <div>
-                        <label className="block text-sm font-bold text-slate-700 mb-1">Valor (R$)</label>
-                        <input name="valAjuste" type="number" step="0.01" required className="w-full border p-2 rounded-lg" placeholder="0.00" />
-                    </div>
+                    <div><label className="block text-sm font-bold text-slate-700 mb-1">Descrição</label><input name="descAjuste" required className="w-full border p-2 rounded-lg" placeholder="Ex: Horas Extras" /></div>
+                    <div><label className="block text-sm font-bold text-slate-700 mb-1">Valor (R$)</label><input name="valAjuste" type="number" step="0.01" required className="w-full border p-2 rounded-lg" placeholder="0.00" /></div>
                     <div>
                         <label className="block text-sm font-bold text-slate-700 mb-1">Tipo</label>
-                        <select name="tipoAjuste" className="w-full border p-2 rounded-lg">
-                            <option value="Provento">Provento (Soma)</option>
-                            <option value="Desconto">Desconto (Subtrai)</option>
-                        </select>
+                        <select name="tipoAjuste" className="w-full border p-2 rounded-lg"><option value="Provento">Provento (Soma)</option><option value="Desconto">Desconto (Subtrai)</option></select>
                     </div>
                     <button type="submit" className="w-full bg-indigo-600 text-white py-3 rounded-lg font-bold mt-4">Adicionar</button>
                 </form>
@@ -779,12 +565,7 @@ function App() {
                     {ajustes.length === 0 && <p className="text-sm text-slate-400 italic">Nenhum ajuste adicionado.</p>}
                     <ul className="space-y-2">
                         {ajustes.map((aj, i) => (
-                            <li key={i} className="flex justify-between text-sm bg-slate-50 p-2 rounded">
-                                <span>{aj.descricao}</span>
-                                <span className={aj.tipo === 'Provento' ? 'text-green-600' : 'text-red-600'}>
-                                    {aj.tipo === 'Provento' ? '+' : '-'} {formatCurrency(aj.valor)}
-                                </span>
-                            </li>
+                            <li key={i} className="flex justify-between text-sm bg-slate-50 p-2 rounded"><span>{aj.descricao}</span><span className={aj.tipo === 'Provento' ? 'text-green-600' : 'text-red-600'}>{aj.tipo === 'Provento' ? '+' : '-'} {formatCurrency(aj.valor)}</span></li>
                         ))}
                     </ul>
                     <div className="flex justify-end gap-3 mt-6">
@@ -795,144 +576,202 @@ function App() {
         </div>
       )}
 
-      {/* MODAL DE IMPRESSÃO */}
       {showPrintModal && calculo && (
-        <div className="fixed inset-0 bg-slate-900/80 z-[100] flex justify-center overflow-y-auto no-print">
-            <div className="bg-slate-200 min-h-screen w-full flex flex-col items-center py-8">
+        <div className="fixed inset-0 bg-slate-900/80 z-[100] flex justify-center overflow-y-auto print:absolute print:inset-0 print:bg-white print:z-auto">
+            <div className="bg-slate-200 min-h-screen w-full flex flex-col items-center py-8 print:bg-white print:p-0">
                 
-                {/* Controles de Impressão */}
                 <div className="bg-white p-4 rounded-xl shadow-lg mb-8 flex flex-col md:flex-row items-center gap-6 w-full max-w-4xl no-print">
                     <div className="flex items-center gap-4">
-                        <button onClick={() => setShowPrintModal(false)} className="text-slate-500 hover:text-slate-800 font-medium flex items-center gap-1">
-                            <span className="material-icons-round">arrow_back</span> Voltar
-                        </button>
+                        <button onClick={() => setShowPrintModal(false)} className="text-slate-500 hover:text-slate-800 font-medium flex items-center gap-1"><span className="material-icons-round">arrow_back</span> Voltar</button>
                         <div className="h-6 w-px bg-slate-200"></div>
-                        <label className="flex items-center gap-2 cursor-pointer select-none">
-                            <input type="checkbox" checked={printSignatures} onChange={e => setPrintSignatures(e.target.checked)} className="rounded text-indigo-600 focus:ring-indigo-500" />
-                            <span className="text-sm font-medium text-slate-700">Incluir campos de assinatura</span>
-                        </label>
+                        <label className="flex items-center gap-2 cursor-pointer select-none"><input type="checkbox" checked={printSignatures} onChange={e => setPrintSignatures(e.target.checked)} className="rounded text-indigo-600 focus:ring-indigo-500" /><span className="text-sm font-medium text-slate-700">Incluir campos de assinatura</span></label>
                     </div>
                     <div className="flex-1"></div>
-                    <button onClick={() => window.print()} className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2 rounded-lg font-bold shadow-md flex items-center gap-2">
-                        <span className="material-icons-round">print</span> Imprimir
-                    </button>
+                    <button onClick={() => window.print()} className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2 rounded-lg font-bold shadow-md flex items-center gap-2"><span className="material-icons-round">print</span> Imprimir</button>
                 </div>
 
-                {/* ÁREA DE IMPRESSÃO (Folha A4) */}
-                {/* ID usado pelo CSS para visibilidade */}
-                <div id="print-area-container" className="bg-white w-[210mm] min-h-[297mm] p-[10mm] md:p-[15mm] shadow-2xl mx-auto relative text-xs md:text-sm">
+                {/* AREA DE IMPRESSAO - Layout Tabela Formal */}
+                <div id="print-area-container" className="bg-white w-[210mm] min-h-[297mm] p-[15mm] shadow-2xl mx-auto relative text-sm text-slate-900">
                     
-                    {/* Cabeçalho Relatório */}
-                    <div className="flex justify-between items-end border-b-2 border-slate-800 pb-4 mb-6">
+                    {/* Header */}
+                    <div className="border-b-2 border-slate-900 pb-4 mb-6 flex justify-between items-start">
                         <div>
-                            <h1 className="text-2xl font-bold text-slate-900 uppercase tracking-tight">Demonstrativo de Valores</h1>
-                            <p className="text-slate-500 text-xs uppercase tracking-wide mt-1">Cálculo Rescisório Trabalhista</p>
+                            <h1 className="text-xl font-bold uppercase tracking-wider">Demonstrativo de Valores</h1>
+                            <p className="text-xs font-semibold text-slate-500 uppercase mt-1">Cálculo Rescisório Trabalhista</p>
                         </div>
                         <div className="text-right">
-                            <div className="text-xs text-slate-400 uppercase">Data do Cálculo</div>
-                            <div className="font-mono font-bold text-slate-700">{formatDate(new Date())}</div>
+                            <div className="text-[10px] text-slate-500 uppercase">Data do Cálculo</div>
+                            <div className="font-mono font-bold">{formatDate(new Date())}</div>
                         </div>
                     </div>
 
-                    {/* Resumo Contratual - Card Compacto */}
-                    <div className="bg-slate-50 rounded-lg border border-slate-200 p-4 mb-6 grid grid-cols-4 gap-4">
-                        <div>
-                            <div className="text-[10px] text-slate-400 uppercase font-bold mb-1">Data Admissão</div>
-                            <div className="font-mono font-bold text-slate-800">{formatDate(parseDate(formData.dataAdmissao))}</div>
-                        </div>
-                        <div>
-                            <div className="text-[10px] text-slate-400 uppercase font-bold mb-1">Data Demissão</div>
-                            <div className="font-mono font-bold text-slate-800">{formatDate(parseDate(formData.dataDemissao))}</div>
-                        </div>
-                        <div>
-                            <div className="text-[10px] text-slate-400 uppercase font-bold mb-1">Tipo de Aviso</div>
-                            <div className="font-mono font-bold text-slate-800 uppercase">{formData.avisoTipo}</div>
-                        </div>
-                        <div>
-                            <div className="text-[10px] text-slate-400 uppercase font-bold mb-1">Maior Remuneração</div>
-                            <div className="font-mono font-bold text-slate-800">{formatCurrency(Number(formData.salarioBase) + Number(formData.insalubridade))}</div>
-                        </div>
+                    {/* Resumo */}
+                    <div className="bg-slate-100 border border-slate-300 rounded p-4 mb-6 grid grid-cols-4 gap-4 text-xs">
+                        <div><div className="font-bold text-slate-500 uppercase mb-1">Admissão</div><div className="font-mono font-bold text-base">{formatDate(parseDate(formData.dataAdmissao))}</div></div>
+                        <div><div className="font-bold text-slate-500 uppercase mb-1">Demissão</div><div className="font-mono font-bold text-base">{formatDate(parseDate(formData.dataDemissao))}</div></div>
+                        <div><div className="font-bold text-slate-500 uppercase mb-1">Aviso Prévio</div><div className="font-mono font-bold text-base uppercase">{formData.avisoTipo}</div></div>
+                        <div><div className="font-bold text-slate-500 uppercase mb-1">Remuneração</div><div className="font-mono font-bold text-base">{formatCurrency(Number(formData.salarioBase) + Number(formData.insalubridade))}</div></div>
                     </div>
 
-                    {/* GRID DE RESULTADOS PARA IMPRESSÃO */}
-                    <div className="grid grid-cols-2 gap-4 mb-6">
-                        {/* Coluna 1: Proventos */}
-                        <Card title="Proventos" className="border-slate-300 shadow-none">
-                            <ResultRow label="Saldo de Salário" value={calculo.saldoSalario} subtext={`${calculo.diasTrabalhados} dias`} />
-                            <ResultRow label="Aviso Prévio" value={calculo.valorAviso} subtext={`${calculo.diasAviso} dias`} hideIfZero />
-                            <ResultRow label="13º Salário Proporcional" value={calculo.valor13} subtext={`${calculo.avos13}/12 avos`} />
+                    {/* Tabela de Verbas */}
+                    <table className="w-full text-sm text-left mb-6 border-collapse">
+                        <thead className="bg-slate-800 text-white text-xs uppercase">
+                            <tr>
+                                <th className="p-2 border border-slate-800">Rubrica</th>
+                                <th className="p-2 border border-slate-800 text-center w-24">Ref.</th>
+                                <th className="p-2 border border-slate-800 text-right w-32">Proventos</th>
+                                <th className="p-2 border border-slate-800 text-right w-32">Descontos</th>
+                            </tr>
+                        </thead>
+                        <tbody className="text-xs">
+                            {/* Proventos */}
+                            <tr className="border-b border-slate-200">
+                                <td className="p-2">Saldo de Salário</td>
+                                <td className="p-2 text-center text-slate-500">{calculo.diasTrabalhados}d</td>
+                                <td className="p-2 text-right font-mono">{formatCurrency(calculo.saldoSalario)}</td>
+                                <td className="p-2 text-right font-mono"></td>
+                            </tr>
+                            {calculo.valorAviso > 0 && (
+                            <tr className="border-b border-slate-200 bg-slate-50">
+                                <td className="p-2">Aviso Prévio</td>
+                                <td className="p-2 text-center text-slate-500">{calculo.diasAviso}d</td>
+                                <td className="p-2 text-right font-mono">{formatCurrency(calculo.valorAviso)}</td>
+                                <td className="p-2 text-right font-mono"></td>
+                            </tr>
+                            )}
+                            <tr className="border-b border-slate-200">
+                                <td className="p-2">13º Salário Proporcional</td>
+                                <td className="p-2 text-center text-slate-500">{calculo.avos13}/12</td>
+                                <td className="p-2 text-right font-mono">{formatCurrency(calculo.valor13)}</td>
+                                <td className="p-2 text-right font-mono"></td>
+                            </tr>
+                            {calculo.valor13Indenizado > 0 && (
+                            <tr className="border-b border-slate-200 bg-slate-50">
+                                <td className="p-2">13º Salário s/ Aviso Indenizado</td>
+                                <td className="p-2 text-center text-slate-500">-</td>
+                                <td className="p-2 text-right font-mono">{formatCurrency(calculo.valor13Indenizado)}</td>
+                                <td className="p-2 text-right font-mono"></td>
+                            </tr>
+                            )}
+                            {calculo.valorFeriasVencidas > 0 && (
+                            <tr className="border-b border-slate-200">
+                                <td className="p-2">Férias Vencidas</td>
+                                <td className="p-2 text-center text-slate-500">-</td>
+                                <td className="p-2 text-right font-mono">{formatCurrency(calculo.valorFeriasVencidas)}</td>
+                                <td className="p-2 text-right font-mono"></td>
+                            </tr>
+                            )}
+                            {calculo.tercoFeriasVencidas > 0 && (
+                            <tr className="border-b border-slate-200 bg-slate-50">
+                                <td className="p-2">1/3 Férias Vencidas</td>
+                                <td className="p-2 text-center text-slate-500">1/3</td>
+                                <td className="p-2 text-right font-mono">{formatCurrency(calculo.tercoFeriasVencidas)}</td>
+                                <td className="p-2 text-right font-mono"></td>
+                            </tr>
+                            )}
+                            <tr className="border-b border-slate-200">
+                                <td className="p-2">Férias Proporcionais</td>
+                                <td className="p-2 text-center text-slate-500">{calculo.avosFerias}/12</td>
+                                <td className="p-2 text-right font-mono">{formatCurrency(calculo.valorFeriasProp)}</td>
+                                <td className="p-2 text-right font-mono"></td>
+                            </tr>
+                            <tr className="border-b border-slate-200 bg-slate-50">
+                                <td className="p-2">1/3 Férias Proporcionais</td>
+                                <td className="p-2 text-center text-slate-500">1/3</td>
+                                <td className="p-2 text-right font-mono">{formatCurrency(calculo.tercoFeriasProp)}</td>
+                                <td className="p-2 text-right font-mono"></td>
+                            </tr>
+                            {calculo.valorFeriasIndenizado > 0 && (
+                            <tr className="border-b border-slate-200">
+                                <td className="p-2">Férias s/ Aviso Indenizado</td>
+                                <td className="p-2 text-center text-slate-500">-</td>
+                                <td className="p-2 text-right font-mono">{formatCurrency(calculo.valorFeriasIndenizado)}</td>
+                                <td className="p-2 text-right font-mono"></td>
+                            </tr>
+                            )}
+                             {calculo.tercoFeriasIndenizado > 0 && (
+                            <tr className="border-b border-slate-200 bg-slate-50">
+                                <td className="p-2">1/3 s/ Férias Indenizadas</td>
+                                <td className="p-2 text-center text-slate-500">1/3</td>
+                                <td className="p-2 text-right font-mono">{formatCurrency(calculo.tercoFeriasIndenizado)}</td>
+                                <td className="p-2 text-right font-mono"></td>
+                            </tr>
+                            )}
                             
-                            {/* Indenizados */}
-                            <ResultRow label="13º Salário s/ Aviso Indenizado" value={calculo.valor13Indenizado} hideIfZero />
-                            <ResultRow label="Férias s/ Aviso Indenizado" value={calculo.valorFeriasIndenizado} hideIfZero />
-                            <ResultRow label="1/3 s/ Férias Indenizado" value={calculo.tercoFeriasIndenizado} hideIfZero />
-                            
-                            <ResultRow label="Férias Vencidas" value={calculo.valorFeriasVencidas} hideIfZero />
-                            <ResultRow label="1/3 Férias Vencidas" value={calculo.tercoFeriasVencidas} hideIfZero />
-                            <ResultRow label="Férias Proporcionais" value={calculo.valorFeriasProp} subtext={`${calculo.avosFerias}/12 avos`} />
-                            <ResultRow label="1/3 Férias Proporcionais" value={calculo.tercoFeriasProp} />
-                            
+                            {/* Ajustes Proventos */}
                             {ajustes.filter(a => a.tipo === 'Provento').map((aj, idx) => (
-                                <ResultRow key={idx} label={aj.descricao} value={aj.valor} subtext="Ajuste" />
+                                <tr key={`prov-${idx}`} className="border-b border-slate-200">
+                                    <td className="p-2 text-indigo-700">{aj.descricao}</td>
+                                    <td className="p-2 text-center text-slate-500">Manual</td>
+                                    <td className="p-2 text-right font-mono">{formatCurrency(aj.valor)}</td>
+                                    <td className="p-2 text-right font-mono"></td>
+                                </tr>
                             ))}
-                        </Card>
 
-                        {/* Coluna 2: Descontos e FGTS */}
-                        <div className="space-y-4">
-                            <Card title="Descontos" className="border-slate-300 shadow-none">
-                                <ResultRow label="INSS" value={calculo.descontoINSS} isNegative />
-                                {ajustes.filter(a => a.tipo === 'Desconto').map((aj, idx) => (
-                                    <ResultRow key={idx} label={aj.descricao} value={aj.valor} subtext="Ajuste" isNegative />
-                                ))}
-                            </Card>
+                            {/* Descontos */}
+                            <tr className="border-b border-slate-200 text-red-700">
+                                <td className="p-2">INSS</td>
+                                <td className="p-2 text-center text-slate-500">Desc.</td>
+                                <td className="p-2 text-right font-mono"></td>
+                                <td className="p-2 text-right font-mono">{formatCurrency(calculo.descontoINSS)}</td>
+                            </tr>
+                            {ajustes.filter(a => a.tipo === 'Desconto').map((aj, idx) => (
+                                <tr key={`desc-${idx}`} className="border-b border-slate-200 text-red-700">
+                                    <td className="p-2">{aj.descricao}</td>
+                                    <td className="p-2 text-center text-slate-500">Manual</td>
+                                    <td className="p-2 text-right font-mono"></td>
+                                    <td className="p-2 text-right font-mono">{formatCurrency(aj.valor)}</td>
+                                </tr>
+                            ))}
+                        </tbody>
+                        <tfoot className="bg-slate-100 font-bold border-t-2 border-slate-300">
+                             <tr>
+                                <td className="p-3" colSpan={2}>TOTAIS</td>
+                                <td className="p-3 text-right text-slate-800">{formatCurrency((calculo.rescisaoLiquida + calculo.descontoINSS + ajustes.filter((a: any) => a.tipo === 'Desconto').reduce((acc: number, c: any) => acc + c.valor, 0)))}</td>
+                                <td className="p-3 text-right text-red-600">{formatCurrency(calculo.descontoINSS + ajustes.filter((a: any) => a.tipo === 'Desconto').reduce((acc: number, c: any) => acc + c.valor, 0))}</td>
+                            </tr>
+                        </tfoot>
+                    </table>
 
-                            <Card title="FGTS (Para Fins Rescisórios)" className="border-slate-300 shadow-none bg-slate-50">
-                                <ResultRow label="Saldo Base" value={calculo.saldoFGTSBase + calculo.fgtsRescisao + calculo.fgtsAvisoIndenizado} />
-                                <ResultRow label="Multa 40%" value={calculo.multa40} />
-                                <div className="mt-2 pt-2 border-t border-slate-300 flex justify-between font-bold">
-                                    <span>Total FGTS</span>
-                                    <span>{formatCurrency(calculo.totalContaFGTS)}</span>
-                                </div>
-                            </Card>
+                    {/* Resumo FGTS */}
+                    <div className="mb-6 p-4 bg-slate-50 border border-slate-200 rounded text-xs">
+                        <h3 className="font-bold text-slate-700 uppercase mb-2 border-b border-slate-200 pb-1">Demonstrativo FGTS</h3>
+                        <div className="grid grid-cols-2 gap-x-8 gap-y-1">
+                            <div className="flex justify-between"><span>Base de Cálculo (Fins Rescisórios):</span> <span className="font-mono font-semibold">{formatCurrency(calculo.saldoFGTSBase + calculo.fgtsRescisao + calculo.fgtsAvisoIndenizado)}</span></div>
+                            <div className="flex justify-between"><span>Multa Rescisória (40%):</span> <span className="font-mono font-semibold">{formatCurrency(calculo.multa40)}</span></div>
+                            <div className="flex justify-between border-t border-slate-200 pt-1 mt-1 font-bold text-slate-800 col-span-2"><span>Total FGTS a Depositar:</span> <span className="font-mono text-sm">{formatCurrency(calculo.totalContaFGTS)}</span></div>
                         </div>
                     </div>
 
-                    {/* TOTALIZADOR FINAL - DESTAQUE */}
-                    <div className="bg-slate-800 text-white p-6 rounded-lg mb-8 flex justify-between items-center print:bg-slate-800 print:text-white">
+                    {/* TOTAL GERAL BOX */}
+                    <div className="border-2 border-slate-800 p-4 mb-12 flex justify-between items-center bg-slate-50">
                         <div>
-                            <div className="text-xs text-slate-300 uppercase font-bold tracking-wider mb-1">Total Geral a Receber</div>
-                            <div className="text-xs opacity-70">Rescisão Líquida + FGTS GRRF</div>
+                            <div className="text-xs font-bold uppercase text-slate-500">Total Geral a Receber</div>
+                            <div className="text-[10px] text-slate-400">Rescisão Líquida + Total FGTS</div>
                         </div>
-                        <div className="text-3xl font-bold">{formatCurrency(calculo.totalGeral)}</div>
-                    </div>
-                    
-                    {/* Detalhe menor dos componentes do total */}
-                    <div className="flex justify-end gap-6 text-xs text-slate-500 mb-12">
-                        <span>Rescisão Líquida: <strong>{formatCurrency(calculo.rescisaoLiquida)}</strong></span>
-                        <span>+</span>
-                        <span>Total FGTS: <strong>{formatCurrency(calculo.totalContaFGTS)}</strong></span>
+                        <div className="text-3xl font-bold text-slate-900 font-mono">{formatCurrency(calculo.totalGeral)}</div>
                     </div>
 
-                    {/* ASSINATURAS */}
+                    {/* Assinaturas */}
                     {printSignatures && (
-                        <div className="grid grid-cols-2 gap-12 mt-auto pt-12 border-t border-slate-100">
-                            <div className="text-center">
-                                <div className="border-b border-slate-400 mb-2 w-full"></div>
-                                <div className="font-bold text-slate-700 text-xs uppercase">Assinatura do Empregador</div>
-                            </div>
-                            <div className="text-center">
-                                <div className="border-b border-slate-400 mb-2 w-full"></div>
-                                <div className="font-bold text-slate-700 text-xs uppercase">Assinatura do Empregado</div>
-                            </div>
+                    <div className="grid grid-cols-2 gap-12 pt-8 border-t border-slate-200">
+                        <div className="text-center">
+                            <div className="h-10"></div>
+                            <div className="border-t border-slate-400 pt-2 font-bold text-xs uppercase">Assinatura do Empregador</div>
                         </div>
+                        <div className="text-center">
+                            <div className="h-10"></div>
+                            <div className="border-t border-slate-400 pt-2 font-bold text-xs uppercase">Assinatura do Empregado</div>
+                        </div>
+                    </div>
                     )}
 
-                    {/* RODAPÉ CONTADOR */}
-                    <div className="absolute bottom-[10mm] left-[10mm] right-[10mm] flex items-center gap-3 border-t border-slate-200 pt-3">
-                        <div className="bg-slate-800 text-white w-8 h-8 flex items-center justify-center rounded font-bold text-xs">L</div>
+                    {/* Rodapé */}
+                    <div className="absolute bottom-[10mm] left-[15mm] right-[15mm] border-t border-slate-200 pt-2 flex items-center gap-2">
+                        <div className="bg-slate-800 text-white w-6 h-6 flex items-center justify-center font-bold text-[10px] rounded">L</div>
                         <div>
-                            <div className="text-xs font-bold text-slate-800 uppercase">Lucas Araujo dos Santos</div>
-                            <div className="text-[10px] text-slate-500">Contador • CRC-BA: 046968/O-6</div>
+                            <div className="text-[10px] font-bold uppercase text-slate-800">Lucas Araujo dos Santos</div>
+                            <div className="text-[9px] text-slate-500 uppercase">Contador • CRC-BA: 046968/O-6</div>
                         </div>
                     </div>
 
