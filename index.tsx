@@ -191,7 +191,7 @@ const FormInput = ({ label, type = "text", className = "", options, ...props }: 
 
 function App() {
   const [formData, setFormData] = useState({
-    motivo: 'dispensa' as 'dispensa' | 'pedido', // Novo campo
+    motivo: 'dispensa' as 'dispensa' | 'pedido',
     salarioBase: 2500,
     insalubridade: 0,
     dataAdmissao: '2023-12-03',
@@ -224,7 +224,8 @@ function App() {
       // Validação de segurança para não travar o navegador
       if (isNaN(start.getTime()) || isNaN(end.getTime()) || start > end) return;
 
-      const dates = [];
+      // CORREÇÃO: Tipagem explícita para evitar erro no build (implicit any[])
+      const dates: {date: string, value: number}[] = [];
       let current = new Date(start.getFullYear(), start.getMonth(), 1);
       
       // O loop deve ir até o mês ANTERIOR à demissão para a lista manual.
@@ -238,7 +239,6 @@ function App() {
         current = new Date(current.getFullYear(), current.getMonth() + 1, 1);
       }
       
-      // Só atualiza se o tamanho mudar drasticamente para evitar resetar valores enquanto digita (em um cenário real seria melhor comparar)
       setFgtsManualData(prev => {
           if (prev.length === dates.length && prev.length > 0 && prev[0].date === dates[0].date) return prev;
           return dates;
@@ -280,14 +280,11 @@ function App() {
     const projecaoAviso = new Date(demissao);
     if (!isPedidoDemissao) {
         projecaoAviso.setDate(demissao.getDate() + diasAviso);
-    } else {
-        // No pedido de demissão, o contrato encerra na demissão (ou fim do aviso trabalhado), não projeta para fins de 13º/Férias Indenizados
-    }
+    } 
 
     if (formData.avisoTipo === 'indenizado') {
         if (isPedidoDemissao) {
             // Pedido de Demissão + Indenizado = Funcionário não cumpriu. Desconto.
-            // Regra: Descontar 30 dias (ignorando projeção de anos)
             valorAvisoDesconto = (salarioTotal / 30) * 30; // Sempre 30 dias
         } else {
             // Dispensa + Indenizado = Empresa paga. Provento.
@@ -302,7 +299,6 @@ function App() {
                 valorAvisoProvento = (salarioTotal / 30) * diasIndenizados;
             }
         }
-        // Se pedido + trabalhado: Recebe saldo de salário normal, aviso é 0.
     }
 
     // 2. Saldo de Salário
@@ -408,8 +404,6 @@ function App() {
         saldoFGTSParaMulta = fgtsManualData.reduce((acc, curr) => acc + curr.value, 0);
     }
 
-    // Depósito do mês da rescisão (Sempre devido, exceto justa causa, mas aqui assumimos sem justa causa ou pedido)
-    // Se aviso indenizado (PROVENTO), incide FGTS. Se Desconto, não.
     const baseFGTSRescisao = saldoSalario + valor13 + (valorAvisoProvento > 0 ? valorAvisoProvento : 0);
     const fgtsRescisao = baseFGTSRescisao * 0.08;
     
@@ -419,12 +413,7 @@ function App() {
 
     const baseTotalMulta = saldoFGTSParaMulta + fgtsRescisao + fgtsAvisoIndenizado;
     
-    // Se pedido de demissão, multa é 0.
     const multa40 = isPedidoDemissao ? 0 : baseTotalMulta * 0.4;
-    
-    // Total Conta: Se pedido demissão, funcionário não saca. 
-    // Mas para fins de cálculo de custo/demonstrativo, o valor existe na conta vinculada.
-    // O usuário pediu "FGTS saíra zerado". Vou zerar o total de saque se for pedido.
     const totalContaFGTS = isPedidoDemissao ? 0 : (baseTotalMulta + multa40);
 
     // 7. Descontos
@@ -432,24 +421,20 @@ function App() {
     const descontoINSS = calcularINSS(baseINSS);
 
     // 8. Totais
-    // Aviso Provento entra aqui
     const totalProventos = saldoSalario + valorAvisoProvento + valor13 + valorFeriasVencidas + tercoFeriasVencidas + valorFeriasProp + tercoFeriasProp + valor13Indenizado + valorFeriasIndenizado + tercoFeriasIndenizado;
     
-    // Aviso Desconto entra aqui
     const totalDescontosAutomaticos = descontoINSS + valorAvisoDesconto;
 
     const totalAjustesProventos = ajustes.filter(a => a.tipo === 'Provento').reduce((acc, c) => acc + c.valor, 0);
     const totalAjustesDescontos = ajustes.filter(a => a.tipo === 'Desconto').reduce((acc, c) => acc + c.valor, 0);
     
     const rescisaoLiquida = (totalProventos + totalAjustesProventos) - (totalDescontosAutomaticos + totalAjustesDescontos);
-    
-    // Total Geral (Líquido + Saque FGTS)
     const totalGeral = rescisaoLiquida + totalContaFGTS;
 
     setCalculo({
         saldoSalario, diasTrabalhados, 
-        valorAviso: valorAvisoProvento, // Visualização positiva
-        valorAvisoDesconto, // Visualização negativa
+        valorAviso: valorAvisoProvento, 
+        valorAvisoDesconto, 
         diasAviso, projecaoAviso, valor13, avos13,
         valorFeriasVencidas, tercoFeriasVencidas, valorFeriasProp, tercoFeriasProp, avosFerias: avosFeriasCalc,
         valor13Indenizado, valorFeriasIndenizado, tercoFeriasIndenizado,
@@ -543,7 +528,6 @@ function App() {
                     onChange={handleInputChange} 
                 />
                 
-                {/* Info dinâmica sobre o aviso */}
                 {formData.motivo === 'pedido' && formData.avisoTipo === 'indenizado' && (
                     <div className="bg-orange-50 text-orange-700 text-xs p-3 rounded-lg mb-4 border border-orange-100">
                         <strong>Nota:</strong> Como é pedido de demissão indenizado, o valor será descontado (30 dias).
@@ -598,7 +582,6 @@ function App() {
                         <Card title="Proventos" icon="add_circle_outline" delay="delay-400" action={<button onClick={() => setShowAdjustModal(true)} className="text-xs font-bold text-indigo-600 hover:text-indigo-800">AJUSTAR</button>}>
                             <ResultRow label="Saldo de Salário" value={calculo.saldoSalario} subtext={`${calculo.diasTrabalhados} dias`} />
                             
-                            {/* Se aviso for provento (Dispensa + Indenizado ou Dispensa + Trab + Projeção) */}
                             <ResultRow label="Aviso Prévio Indenizado" value={calculo.valorAviso} subtext={`${calculo.diasAviso} dias`} hideIfZero />
                             
                             {calculo.valor13Indenizado > 0 && <ResultRow label="13º Salário s/ Aviso Prévio Indenizado" value={calculo.valor13Indenizado} subtext="1/12 avos" />}
@@ -612,7 +595,6 @@ function App() {
                         </Card>
                         <Card title="Descontos" icon="remove_circle_outline" delay="delay-500">
                             <ResultRow label="INSS" value={calculo.descontoINSS} isNegative />
-                            {/* Aviso Desconto (Pedido + Indenizado) */}
                             <ResultRow label="Aviso Prévio (Não Trabalhado)" value={calculo.valorAvisoDesconto} subtext="30 dias" isNegative hideIfZero />
                             {ajustes.filter(a => a.tipo === 'Desconto').map((aj, idx) => <ResultRow key={idx} label={aj.descricao} value={aj.valor} subtext="Manual" isNegative />)}
                         </Card>
@@ -717,7 +699,7 @@ function App() {
                     <button onClick={() => window.print()} className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2 rounded-lg font-bold shadow-md flex items-center gap-2"><span className="material-icons-round">print</span> Imprimir</button>
                 </div>
 
-                {/* AREA DE IMPRESSAO - Layout Tabela Formal - COM CORREÇÃO DE FOOTER */}
+                {/* AREA DE IMPRESSAO - Layout Tabela Formal */}
                 <div id="print-area-container" className="bg-white w-full h-full p-8 shadow-none mx-auto relative text-sm text-slate-900 flex flex-col justify-between print:p-8">
                     
                     <div className="print-content-wrapper">
@@ -825,8 +807,6 @@ function App() {
                                     <td className="p-2 text-right font-mono"></td>
                                 </tr>
                                 )}
-                                
-                                {/* Ajustes Proventos */}
                                 {ajustes.filter(a => a.tipo === 'Provento').map((aj, idx) => (
                                     <tr key={`prov-${idx}`} className="border-b border-slate-200">
                                         <td className="p-2 text-indigo-700">{aj.descricao}</td>
@@ -843,7 +823,6 @@ function App() {
                                     <td className="p-2 text-right font-mono"></td>
                                     <td className="p-2 text-right font-mono">{formatCurrency(calculo.descontoINSS)}</td>
                                 </tr>
-                                
                                 {calculo.valorAvisoDesconto > 0 && (
                                 <tr className="border-b border-slate-200 text-red-700">
                                     <td className="p-2">Aviso Prévio (Não Trabalhado)</td>
@@ -852,7 +831,6 @@ function App() {
                                     <td className="p-2 text-right font-mono">{formatCurrency(calculo.valorAvisoDesconto)}</td>
                                 </tr>
                                 )}
-
                                 {ajustes.filter(a => a.tipo === 'Desconto').map((aj, idx) => (
                                     <tr key={`desc-${idx}`} className="border-b border-slate-200 text-red-700">
                                         <td className="p-2">{aj.descricao}</td>
@@ -871,7 +849,6 @@ function App() {
                             </tfoot>
                         </table>
 
-                        {/* Resumo FGTS - Ocultar ou Mostrar zerado se for pedido de demissão */}
                         {!calculo.isPedidoDemissao && (
                         <div className="mb-6 p-4 bg-slate-50 border border-slate-200 rounded text-xs">
                             <h3 className="font-bold text-slate-700 uppercase mb-2 border-b border-slate-200 pb-1">Demonstrativo FGTS</h3>
@@ -883,7 +860,6 @@ function App() {
                         </div>
                         )}
 
-                        {/* TOTAL GERAL BOX */}
                         <div className="mb-8">
                             <div className="flex justify-end items-center mb-2 px-4 gap-4">
                                 <span className="text-sm font-bold text-slate-500 uppercase">Rescisão Líquida a Receber</span>
@@ -900,7 +876,6 @@ function App() {
                         </div>
                     </div>
 
-                    {/* RODAPÉ E ASSINATURAS - Usando mt-auto (flex) para ficar no final */}
                     <div className="mt-auto">
                         {printSignatures && (
                         <div className="grid grid-cols-2 gap-12 pt-8 border-t border-slate-200 mb-8">
