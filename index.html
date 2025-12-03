@@ -57,6 +57,7 @@
       -webkit-font-smoothing: antialiased;
     }
 
+    /* Scrollbar personalizada */
     ::-webkit-scrollbar {
       width: 8px;
     }
@@ -71,34 +72,24 @@
       background: #94A3B8;
     }
 
-    /* REGRAS DE IMPRESSÃO */
+    /* REGRAS DE IMPRESSÃO CORRIGIDAS E ROBUSTAS */
     @media print {
       @page {
         size: A4;
         margin: 5mm;
       }
 
-      body {
-        background-color: white;
-        margin: 0;
-        padding: 0;
-        /* Reduz escala para caber em uma página */
-        zoom: 75%; 
-        -webkit-print-color-adjust: exact !important;
-        print-color-adjust: exact !important;
+      /* Oculta tudo por padrão usando visibility para não quebrar layout, mas esconde conteúdo */
+      body * {
+        visibility: hidden;
       }
 
-      /* Esconde tudo exceto a área de impressão */
-      body > *:not(#print-area-container) {
-        display: none !important;
-      }
-
-      /* Garante visibilidade da área de impressão */
+      /* Torna visível o container de impressão e seus filhos */
       #print-area-container, #print-area-container * {
-        visibility: visible !important;
-        display: block;
+        visibility: visible;
       }
 
+      /* Posiciona o container de impressão no topo absoluto, cobrindo tudo */
       #print-area-container {
         position: absolute;
         left: 0;
@@ -106,15 +97,25 @@
         width: 100%;
         margin: 0;
         padding: 0;
-        background: white;
+        background: white !important;
+        z-index: 99999;
       }
 
+      /* Esconde elementos marcados como no-print */
       .no-print {
         display: none !important;
       }
+
+      /* Ajustes globais para impressão */
+      body {
+        background: white;
+        font-size: 11px; /* Fonte base levemente reduzida */
+      }
       
-      .text-white {
-        color: white !important;
+      /* Força impressão de backgrounds e cores exatas */
+      * {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
       }
     }
   </style>
