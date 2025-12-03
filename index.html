@@ -76,13 +76,15 @@
     @media print {
       @page {
         size: A4;
-        margin: 10mm;
+        margin: 5mm; /* Margens mínimas para evitar cortes */
       }
 
       /* Esconde tudo no body */
       body {
         visibility: hidden;
         background: white !important;
+        margin: 0;
+        padding: 0;
       }
       
       /* Esconde elementos específicos que podem atrapalhar */
@@ -97,7 +99,8 @@
         left: 0 !important;
         top: 0 !important;
         width: 100% !important;
-        height: 100vh !important; /* Garante altura total */
+        height: auto !important; /* Altura automática para não forçar corte */
+        min-height: 98vh; /* Ocupa quase toda a folha */
         margin: 0 !important;
         padding: 0 !important;
         z-index: 9999 !important;
@@ -117,9 +120,11 @@
         print-color-adjust: exact !important;
       }
       
-      /* Ajuste de fonte para impressão */
-      html {
-        font-size: 12px;
+      /* Ajuste de escala para garantir que o rodapé caiba */
+      .print-content-wrapper {
+        transform: scale(0.95);
+        transform-origin: top center;
+        width: 105%; /* Compensa a escala */
       }
     }
   </style>

@@ -595,9 +595,9 @@ function App() {
                 </div>
 
                 {/* AREA DE IMPRESSAO - Layout Tabela Formal - COM CORREÇÃO DE FOOTER */}
-                <div id="print-area-container" className="bg-white w-[210mm] min-h-[297mm] p-[15mm] shadow-2xl mx-auto relative text-sm text-slate-900 flex flex-col justify-between">
+                <div id="print-area-container" className="bg-white w-full h-full p-8 shadow-none mx-auto relative text-sm text-slate-900 flex flex-col justify-between">
                     
-                    <div>
+                    <div className="print-content-wrapper">
                         {/* Header */}
                         <div className="border-b-2 border-slate-900 pb-4 mb-6 flex justify-between items-start">
                             <div>
