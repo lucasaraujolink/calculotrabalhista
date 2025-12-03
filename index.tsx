@@ -228,6 +228,7 @@ const App = () => {
   const [fgtsManualBalance, setFgtsManualBalance] = useState<string>('');
   
   const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
+  const [includeSignatures, setIncludeSignatures] = useState(true);
 
   const resultsRef = useRef<HTMLDivElement>(null);
 
@@ -674,590 +675,443 @@ const App = () => {
                 </button>
             </div>
           </Card>
-
-          <div className="bg-blue-50/80 backdrop-blur-sm border border-blue-100 rounded-2xl p-5 flex gap-3 text-sm text-blue-800 shadow-sm animate-fade-in delay-200">
-            <span className="material-icons-round text-blue-500 text-xl">info</span>
-            <p className="leading-relaxed">Os cálculos são estimativas. Clique no cartão de <strong>FGTS</strong> para informar o saldo real ou calcular mês a mês.</p>
-          </div>
         </div>
 
         {/* COLUNA DIREITA - RESULTADOS */}
-        <div className="lg:col-span-8 space-y-6" ref={resultsRef}>
+        <div className="lg:col-span-8 animate-slide-up delay-100 no-print" ref={resultsRef}>
           {!resultado ? (
-            <div className="h-full bg-white/50 border-2 border-dashed border-slate-200 rounded-3xl flex items-center justify-center text-slate-400 flex-col gap-4 min-h-[400px] animate-pulse">
-               <div className="p-6 bg-slate-50 rounded-full">
-                  <span className="material-icons-round text-6xl opacity-20 text-slate-500">pending_actions</span>
-               </div>
-               <p className="font-medium text-center max-w-xs">Preencha o formulário e clique em "Calcular Rescisão" para ver os resultados</p>
+            <div className="h-full flex flex-col items-center justify-center bg-slate-50/50 rounded-3xl border-2 border-dashed border-slate-200 text-slate-400 p-12 text-center min-h-[400px]">
+              <span className="material-icons-round text-6xl mb-4 text-slate-300">analytics</span>
+              <p className="text-lg font-medium">Preencha os dados e clique em calcular</p>
             </div>
           ) : (
-            <>
-              {/* Cards de Resumo */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-5 no-print">
-                
-                {/* 1. Rescisão Líquida */}
-                <div className="bg-white border border-slate-100 rounded-2xl p-6 shadow-sm hover:shadow-md transition-all hover:-translate-y-1 animate-fade-in">
-                  <div className="text-slate-500 text-sm font-bold mb-2 uppercase tracking-wide">Rescisão Líquida</div>
-                  <div className="text-2xl lg:text-3xl font-bold text-slate-800 tracking-tight mb-1">{formatCurrency(resultado.liquido)}</div>
-                  <div className="text-xs text-slate-400 font-medium">Verbas Rescisórias - Descontos</div>
-                </div>
-                
-                {/* 2. FGTS */}
-                <div 
-                    onClick={handleFgtsCardClick}
-                    className="cursor-pointer group bg-white border border-orange-100 rounded-2xl p-6 shadow-sm hover:shadow-md transition-all hover:-translate-y-1 hover:border-orange-200 animate-fade-in delay-100 relative overflow-hidden"
-                >
-                  <div className="absolute inset-0 bg-orange-50 opacity-0 group-hover:opacity-10 transition-opacity"></div>
-                  <div className="absolute right-4 top-4 text-orange-200 group-hover:text-orange-300 transition-colors">
-                      <span className="material-icons-round">edit</span>
+            <div className="space-y-6">
+              {/* TOTAIS PRINCIPAIS */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Card className="bg-gradient-to-br from-indigo-50 to-white border-indigo-100" delay="delay-200">
+                  <div className="flex flex-col h-full justify-between">
+                    <div>
+                        <div className="text-sm font-bold text-indigo-400 uppercase tracking-wider mb-2">Rescisão Líquida</div>
+                        <div className="text-3xl font-bold text-slate-800 mb-1">{formatCurrency(resultado.liquido)}</div>
+                        <div className="text-sm text-slate-500">Valor a receber na conta</div>
+                    </div>
                   </div>
-                  <div className="text-orange-600 text-sm font-bold mb-2 flex items-center gap-2 uppercase tracking-wide relative z-10">
-                    <div className="p-1 bg-orange-100 rounded-md"><span className="material-icons-round text-sm block">savings</span></div>
-                    FGTS + Multa 40%
-                  </div>
-                  <div className="text-2xl lg:text-3xl font-bold text-slate-800 relative z-10">{formatCurrency(resultado.fgts.total)}</div>
-                  <div className="text-xs text-slate-400 mt-2 font-medium flex items-center gap-1">
-                      <span>Clique para ajustar</span>
-                  </div>
-                </div>
+                </Card>
 
-                {/* 3. Total Geral */}
-                <div className="relative overflow-hidden bg-gradient-to-br from-indigo-600 to-indigo-800 rounded-2xl p-6 text-white shadow-xl shadow-indigo-200 transform transition-all hover:-translate-y-1 hover:shadow-2xl animate-fade-in delay-200">
-                  <div className="absolute top-0 right-0 p-4 opacity-10">
-                     <span className="material-icons-round text-8xl">account_balance_wallet</span>
-                  </div>
-                  <div className="relative z-10">
-                    <div className="text-indigo-100 text-sm font-semibold mb-2 uppercase tracking-wide opacity-80">Total Geral</div>
-                    <div className="text-3xl lg:text-4xl font-bold tracking-tight mb-1">{formatCurrency(resultado.liquido + resultado.fgts.total)}</div>
-                    <div className="text-xs text-indigo-200 font-medium">Rescisão Líquida + Total FGTS</div>
-                  </div>
-                </div>
+                <Card 
+                    className="bg-gradient-to-br from-indigo-600 to-indigo-700 text-white border-transparent" 
+                    delay="delay-300"
+                >
+                    <div className="flex flex-col h-full justify-between">
+                        <div>
+                            <div className="text-sm font-bold text-indigo-200 uppercase tracking-wider mb-2">Total Geral a Receber</div>
+                            <div className="text-3xl font-bold text-white mb-1">{formatCurrency(resultado.liquido + resultado.fgts.total)}</div>
+                            <div className="text-sm text-indigo-100">Rescisão + FGTS Total</div>
+                        </div>
+                    </div>
+                </Card>
               </div>
 
-              {/* Detalhamento */}
-              <Card 
-                className="no-print"
-                title="Detalhamento das Verbas" 
-                icon="receipt_long" 
-                delay="delay-300"
-                action={
-                    <button 
-                        onClick={openEditModal}
-                        className="no-print flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-indigo-600 bg-indigo-50 hover:bg-indigo-100 rounded-lg transition-colors"
-                    >
-                        <span className="material-icons-round text-sm">edit</span>
-                        Ajustar Valores
-                    </button>
-                }
-              >
-                <div className="space-y-8">
-                  {/* Grupo Saldo e Aviso */}
-                  <div>
-                    <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3 ml-1 flex items-center gap-2">
-                        <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
-                        Salário e Aviso Prévio
-                    </h4>
-                    <div className="bg-slate-50/50 rounded-xl p-2 border border-slate-100">
-                        <ResultRow 
-                          label="Saldo de Salário" 
-                          subtext={`${resultado.diasTrabalhadosMes} dias trabalhados no mês`}
-                          value={resultado.valSaldoSalario} 
-                        />
-                        <ResultRow 
-                          label="Aviso Prévio" 
-                          subtext={`${resultado.diasAviso} dias (${formData.tipoAviso}) - Projeção até ${resultado.dataProjecao}`}
-                          value={resultado.valAviso} 
-                        />
-                    </div>
-                  </div>
+               {/* CARTÕES DE DETALHES */}
+               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {/* COLUNA 1 - PROVENTOS */}
+                    <div className="space-y-6">
+                        <Card title="Proventos Principais" icon="payments" delay="delay-200">
+                            <ResultRow 
+                                label="Saldo de Salário" 
+                                value={resultado.valSaldoSalario} 
+                                subtext={`${resultado.diasTrabalhadosMes} dias trabalhados`}
+                            />
+                            <ResultRow 
+                                label="Aviso Prévio" 
+                                value={resultado.valAviso} 
+                                subtext={`${resultado.diasAviso} dias (${formData.tipoAviso})`}
+                            />
+                        </Card>
 
-                  {/* Grupo 13º */}
-                  <div>
-                    <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3 ml-1 flex items-center gap-2">
-                        <span className="w-2 h-2 rounded-full bg-blue-400"></span>
-                        13º Salário
-                    </h4>
-                    <div className="bg-slate-50/50 rounded-xl p-2 border border-slate-100">
-                      <ResultRow 
-                        label="13º Salário Proporcional" 
-                        subtext={`${resultado.avos13}/12 avos`}
-                        value={resultado.val13Proporcional} 
-                      />
-                      {resultado.val13Indenizado > 0 && (
-                        <ResultRow 
-                          label="13º Salário s/ Aviso Prévio Indenizado" 
-                          subtext="Sobre Aviso Prévio"
-                          value={resultado.val13Indenizado} 
-                        />
-                      )}
+                        <Card title="13º Salário" icon="calendar_today" delay="delay-300">
+                            <ResultRow 
+                                label="13º Proporcional" 
+                                value={resultado.val13Proporcional} 
+                                subtext={`${resultado.avos13}/12 avos`}
+                            />
+                            {resultado.val13Indenizado > 0 && (
+                                <ResultRow 
+                                    label="13º s/ Aviso Prévio Indenizado" 
+                                    value={resultado.val13Indenizado}
+                                />
+                            )}
+                        </Card>
                     </div>
-                  </div>
 
-                  {/* Grupo Férias */}
-                  <div>
-                    <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3 ml-1 flex items-center gap-2">
-                        <span className="w-2 h-2 rounded-full bg-amber-400"></span>
-                        Férias
-                    </h4>
-                    <div className="bg-slate-50/50 rounded-xl p-2 border border-slate-100">
-                      {resultado.valFeriasVencidas > 0 && (
-                        <>
-                          <ResultRow 
-                            label="Férias Vencidas" 
-                            subtext={`${formData.feriasVencidas} período(s)`}
-                            value={resultado.valFeriasVencidas} 
-                          />
-                          <ResultRow 
-                            label="1/3 s/ Férias Vencidas" 
-                            value={resultado.valTercoFeriasVencidas} 
-                          />
-                        </>
-                      )}
-                      
-                      <ResultRow 
-                        label="Férias Proporcionais" 
-                        subtext={`${resultado.avosFerias}/12 avos`}
-                        value={resultado.valFeriasProporcionais} 
-                      />
-                      <ResultRow 
-                        label="1/3 s/ Férias Proporcionais" 
-                        value={resultado.valTercoFeriasProp} 
-                      />
+                    {/* COLUNA 2 - FÉRIAS E FGTS */}
+                    <div className="space-y-6">
+                        <Card title="Férias" icon="beach_access" delay="delay-400">
+                            {resultado.valFeriasVencidas > 0 && (
+                                <>
+                                    <ResultRow label="Férias Vencidas" value={resultado.valFeriasVencidas} />
+                                    <ResultRow label="1/3 Férias Vencidas" value={resultado.valTercoFeriasVencidas} />
+                                    <hr className="my-2 border-slate-100"/>
+                                </>
+                            )}
+                            <ResultRow 
+                                label="Férias Proporcionais" 
+                                value={resultado.valFeriasProporcionais} 
+                                subtext={`${resultado.avosFerias}/12 avos`}
+                            />
+                            <ResultRow label="1/3 Férias Proporcionais" value={resultado.valTercoFeriasProp} />
+                            
+                            {resultado.valFeriasIndenizadas > 0 && (
+                                <>
+                                    <hr className="my-2 border-slate-100"/>
+                                    <ResultRow 
+                                        label="Férias s/ Aviso Prévio Indenizado" 
+                                        value={resultado.valFeriasIndenizadas} 
+                                    />
+                                    <ResultRow 
+                                        label="1/3 s/ Aviso Prévio Indenizado" 
+                                        value={resultado.valTercoFeriasIndenizadas} 
+                                    />
+                                </>
+                            )}
+                        </Card>
 
-                      {(resultado.valFeriasIndenizadas > 0) && (
-                        <>
-                          <ResultRow 
-                            label="Férias s/ Aviso Prévio Indenizado" 
-                            subtext="Sobre Aviso Prévio"
-                            value={resultado.valFeriasIndenizadas} 
-                          />
-                          <ResultRow 
-                            label="1/3 s/ Férias s/ Aviso Prévio Indenizado" 
-                            value={resultado.valTercoFeriasIndenizadas} 
-                          />
-                        </>
-                      )}
+                        <Card 
+                            title="FGTS + Multa 40%" 
+                            icon="savings" 
+                            delay="delay-500" 
+                            className="bg-orange-50/50 border-orange-100"
+                            onClick={handleFgtsCardClick}
+                        >
+                            <div className="relative group">
+                                <span className="absolute right-0 top-0 text-orange-400 opacity-0 group-hover:opacity-100 transition-opacity text-xs font-bold flex items-center gap-1">
+                                    <span className="material-icons-round text-sm">edit</span> Editar
+                                </span>
+                                <ResultRow label="Saldo Estimado FGTS" value={resultado.fgts.saldoEstimado} />
+                                <ResultRow label="Multa 40%" value={resultado.fgts.multa} />
+                                <ResultRow label="Total FGTS" value={resultado.fgts.total} isTotal />
+                            </div>
+                        </Card>
                     </div>
-                  </div>
+               </div>
 
-                  {/* Grupo Descontos */}
-                  <div>
-                    <h4 className="text-xs font-bold text-red-400 uppercase tracking-wider mb-3 ml-1 flex items-center gap-2">
-                        <span className="w-2 h-2 rounded-full bg-red-400"></span>
-                        Descontos
-                    </h4>
-                    <div className="bg-red-50/30 border border-red-100 rounded-xl p-2">
-                      <ResultRow 
-                        label="INSS" 
-                        subtext={`Base de cálculo: ${formatCurrency(resultado.baseINSS)}`}
-                        value={resultado.valINSS} 
-                        isNegative
-                      />
+                {/* DESCONTOS */}
+                <Card title="Descontos" icon="remove_circle_outline" delay="delay-500" className="border-red-100 bg-red-50/30">
+                    <div className="flex justify-between items-center py-2">
+                        <div>
+                            <div className="font-medium text-slate-700">INSS</div>
+                            <div className="text-xs text-slate-400">Base: {formatCurrency(resultado.baseINSS)}</div>
+                        </div>
+                        <div className="font-mono font-bold text-red-500">- {formatCurrency(resultado.valINSS)}</div>
                     </div>
-                  </div>
-                </div>
-              </Card>
-            </>
+                </Card>
+                
+                 <button 
+                    onClick={openEditModal}
+                    className="w-full py-4 border-2 border-dashed border-indigo-200 rounded-2xl text-indigo-600 font-bold hover:bg-indigo-50 transition-colors flex items-center justify-center gap-2"
+                >
+                    <span className="material-icons-round">tune</span>
+                    AJUSTAR VALORES MANUALMENTE
+                </button>
+            </div>
           )}
         </div>
       </div>
-      
-      {/* MODAL DE IMPRESSÃO - RELATÓRIO */}
+
+      {/* --- MODAL DE IMPRESSÃO (ESTILO RELATÓRIO) --- */}
       {isPrintModalOpen && resultado && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-0 md:p-4 bg-slate-900/80 backdrop-blur-sm animate-fade-in overflow-y-auto no-print-overlay">
-              {/* ADICIONADO ID 'print-area' PARA O CSS GLOBAL PEGAR APENAS ISSO */}
-              <div id="print-area" className="bg-white md:rounded-2xl shadow-2xl w-full max-w-4xl min-h-screen md:min-h-0 md:h-auto animate-slide-up flex flex-col relative print:shadow-none print:w-full print:max-w-none print:h-full print:rounded-none">
-                  
-                  {/* BOTÕES DE AÇÃO (NÃO IMPRIMEM) */}
-                  <div className="no-print p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50 md:rounded-t-2xl sticky top-0 z-10">
-                       <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
-                           <span className="material-icons-round text-indigo-600">print</span>
-                           Visualização de Impressão
-                       </h2>
-                       <div className="flex gap-2">
-                           <button onClick={() => setIsPrintModalOpen(false)} className="px-4 py-2 text-slate-600 font-medium hover:bg-slate-200 rounded-lg transition-colors">Fechar</button>
-                           <button onClick={handlePrint} className="px-4 py-2 bg-indigo-600 text-white font-bold rounded-lg hover:bg-indigo-700 transition-colors shadow-lg shadow-indigo-100 flex items-center gap-2">
-                               <span className="material-icons-round text-sm">print</span> Imprimir
-                           </button>
-                       </div>
-                  </div>
+        <div id="print-area-container" className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 print:p-0 print:bg-white print:static">
+            
+            {/* CONTROLES DO MODAL (NÃO IMPRIMEM) */}
+            <div className="absolute top-4 right-4 flex gap-4 no-print">
+               <div className="bg-white p-2 rounded-lg shadow-md flex items-center gap-3">
+                  <label className="flex items-center gap-2 cursor-pointer select-none">
+                    <input 
+                      type="checkbox" 
+                      checked={includeSignatures}
+                      onChange={e => setIncludeSignatures(e.target.checked)}
+                      className="w-4 h-4 text-indigo-600 rounded focus:ring-indigo-500"
+                    />
+                    <span className="text-sm font-medium text-slate-700">Incluir Assinaturas</span>
+                  </label>
+               </div>
 
-                  {/* CONTEÚDO DO RELATÓRIO (IMPRESSO) */}
-                  <div className="p-8 md:p-12 print-content text-slate-800">
-                      
-                      {/* CABEÇALHO DO DOCUMENTO */}
-                      <div className="flex justify-between items-end border-b-2 border-slate-800 pb-4 mb-8">
-                          <div>
-                              <h1 className="text-2xl font-bold uppercase tracking-tight text-slate-900">Demonstrativo de Valores</h1>
-                              <p className="text-sm text-slate-500 mt-1 uppercase tracking-wide">Cálculo Rescisório Trabalhista</p>
-                          </div>
-                          <div className="text-right">
-                              <div className="text-xs text-slate-400 uppercase font-bold mb-1">Data do Cálculo</div>
-                              <div className="font-mono text-sm">{new Date().toLocaleDateString('pt-BR')}</div>
-                          </div>
-                      </div>
+               <button 
+                    onClick={handlePrint}
+                    className="bg-indigo-600 text-white px-6 py-2 rounded-lg font-bold shadow-lg hover:bg-indigo-700 transition-colors flex items-center gap-2"
+                >
+                    <span className="material-icons-round">print</span> Imprimir
+                </button>
+                <button 
+                    onClick={() => setIsPrintModalOpen(false)}
+                    className="bg-white text-slate-600 px-4 py-2 rounded-lg font-bold shadow-lg hover:bg-slate-50 transition-colors"
+                >
+                    Fechar
+                </button>
+            </div>
 
-                      {/* GRID DE INFORMAÇÕES GERAIS */}
-                      <div className="bg-white rounded-lg p-0 mb-8 border border-slate-300">
-                          <div className="grid grid-cols-2 md:grid-cols-4 divide-x divide-slate-300">
-                            <div className="flex flex-col p-3">
-                                <span className="text-[10px] uppercase font-bold text-slate-500 mb-1">Admissão</span>
-                                <span className="font-mono font-medium">{parseDate(formData.dataAdmissao).toLocaleDateString()}</span>
-                            </div>
-                            <div className="flex flex-col p-3">
-                                <span className="text-[10px] uppercase font-bold text-slate-500 mb-1">Demissão</span>
-                                <span className="font-mono font-medium">{parseDate(formData.dataDemissao).toLocaleDateString()}</span>
-                            </div>
-                            <div className="flex flex-col p-3">
-                                <span className="text-[10px] uppercase font-bold text-slate-500 mb-1">Aviso Prévio</span>
-                                <span className="font-mono font-medium uppercase text-xs">{formData.tipoAviso} ({resultado.diasAviso}d)</span>
-                            </div>
-                             <div className="flex flex-col p-3">
-                                <span className="text-[10px] uppercase font-bold text-slate-500 mb-1">Projeção</span>
-                                <span className="font-mono font-medium">{resultado.dataProjecao}</span>
-                            </div>
-                          </div>
-                          <div className="border-t border-slate-300 p-3 bg-slate-50">
-                                <span className="text-[10px] uppercase font-bold text-slate-500 mr-2">Maior Remuneração:</span>
-                                <span className="font-mono font-bold">{formatCurrency(formData.salarioBase + formData.adicionalInsalubridade)}</span>
-                          </div>
-                      </div>
-
-                      {/* TABELA DE VALORES */}
-                      <div className="mb-8">
-                          <table className="w-full text-sm border-collapse border border-slate-300">
-                              <thead className="bg-slate-100 text-slate-700 font-bold uppercase text-[10px] tracking-wider">
-                                  <tr>
-                                      <th className="px-3 py-2 text-left border border-slate-300">Rubrica</th>
-                                      <th className="px-3 py-2 text-center border border-slate-300 w-16">Ref.</th>
-                                      <th className="px-3 py-2 text-right border border-slate-300 w-32">Proventos</th>
-                                      <th className="px-3 py-2 text-right border border-slate-300 w-32">Descontos</th>
-                                  </tr>
-                              </thead>
-                              <tbody className="divide-y divide-slate-300">
-                                  {/* PROVENTOS */}
-                                  <tr className="bg-white">
-                                      <td className="px-3 py-2 border-x border-slate-300">Saldo de Salário</td>
-                                      <td className="px-3 py-2 text-center text-slate-500 font-mono text-xs border-x border-slate-300">{resultado.diasTrabalhadosMes}d</td>
-                                      <td className="px-3 py-2 text-right font-mono border-x border-slate-300">{formatCurrency(resultado.valSaldoSalario)}</td>
-                                      <td className="px-3 py-2 border-x border-slate-300"></td>
-                                  </tr>
-                                  <tr className="bg-slate-50">
-                                      <td className="px-3 py-2 border-x border-slate-300">Aviso Prévio</td>
-                                      <td className="px-3 py-2 text-center text-slate-500 font-mono text-xs border-x border-slate-300">{resultado.diasAviso}d</td>
-                                      <td className="px-3 py-2 text-right font-mono border-x border-slate-300">{formatCurrency(resultado.valAviso)}</td>
-                                      <td className="px-3 py-2 border-x border-slate-300"></td>
-                                  </tr>
-                                  <tr className="bg-white">
-                                      <td className="px-3 py-2 border-x border-slate-300">13º Salário Proporcional</td>
-                                      <td className="px-3 py-2 text-center text-slate-500 font-mono text-xs border-x border-slate-300">{resultado.avos13}/12</td>
-                                      <td className="px-3 py-2 text-right font-mono border-x border-slate-300">{formatCurrency(resultado.val13Proporcional)}</td>
-                                      <td className="px-3 py-2 border-x border-slate-300"></td>
-                                  </tr>
-                                  {resultado.val13Indenizado > 0 && (
-                                  <tr className="bg-slate-50">
-                                      <td className="px-3 py-2 border-x border-slate-300">13º Salário s/ Aviso Prévio Indenizado</td>
-                                      <td className="px-3 py-2 text-center text-slate-500 font-mono text-xs border-x border-slate-300">-</td>
-                                      <td className="px-3 py-2 text-right font-mono border-x border-slate-300">{formatCurrency(resultado.val13Indenizado)}</td>
-                                      <td className="px-3 py-2 border-x border-slate-300"></td>
-                                  </tr>
-                                  )}
-                                  <tr className="bg-white">
-                                      <td className="px-3 py-2 border-x border-slate-300">Férias Vencidas</td>
-                                      <td className="px-3 py-2 text-center text-slate-500 font-mono text-xs border-x border-slate-300">{formData.feriasVencidas > 0 ? formData.feriasVencidas : '-'}</td>
-                                      <td className="px-3 py-2 text-right font-mono border-x border-slate-300">{formatCurrency(resultado.valFeriasVencidas)}</td>
-                                      <td className="px-3 py-2 border-x border-slate-300"></td>
-                                  </tr>
-                                  <tr className="bg-slate-50">
-                                      <td className="px-3 py-2 border-x border-slate-300">1/3 s/ Férias Vencidas</td>
-                                      <td className="px-3 py-2 text-center text-slate-500 font-mono text-xs border-x border-slate-300">-</td>
-                                      <td className="px-3 py-2 text-right font-mono border-x border-slate-300">{formatCurrency(resultado.valTercoFeriasVencidas)}</td>
-                                      <td className="px-3 py-2 border-x border-slate-300"></td>
-                                  </tr>
-                                  <tr className="bg-white">
-                                      <td className="px-3 py-2 border-x border-slate-300">Férias Proporcionais</td>
-                                      <td className="px-3 py-2 text-center text-slate-500 font-mono text-xs border-x border-slate-300">{resultado.avosFerias}/12</td>
-                                      <td className="px-3 py-2 text-right font-mono border-x border-slate-300">{formatCurrency(resultado.valFeriasProporcionais)}</td>
-                                      <td className="px-3 py-2 border-x border-slate-300"></td>
-                                  </tr>
-                                  <tr className="bg-slate-50">
-                                      <td className="px-3 py-2 border-x border-slate-300">1/3 s/ Férias Proporcionais</td>
-                                      <td className="px-3 py-2 text-center text-slate-500 font-mono text-xs border-x border-slate-300">-</td>
-                                      <td className="px-3 py-2 text-right font-mono border-x border-slate-300">{formatCurrency(resultado.valTercoFeriasProp)}</td>
-                                      <td className="px-3 py-2 border-x border-slate-300"></td>
-                                  </tr>
-                                  {resultado.valFeriasIndenizadas > 0 && (
-                                  <>
-                                      <tr className="bg-white">
-                                          <td className="px-3 py-2 border-x border-slate-300">Férias s/ Aviso Prévio Indenizado</td>
-                                          <td className="px-3 py-2 text-center text-slate-500 font-mono text-xs border-x border-slate-300">-</td>
-                                          <td className="px-3 py-2 text-right font-mono border-x border-slate-300">{formatCurrency(resultado.valFeriasIndenizadas)}</td>
-                                          <td className="px-3 py-2 border-x border-slate-300"></td>
-                                      </tr>
-                                      <tr className="bg-slate-50">
-                                          <td className="px-3 py-2 border-x border-slate-300">1/3 s/ Férias s/ Aviso Indenizado</td>
-                                          <td className="px-3 py-2 text-center text-slate-500 font-mono text-xs border-x border-slate-300">-</td>
-                                          <td className="px-3 py-2 text-right font-mono border-x border-slate-300">{formatCurrency(resultado.valTercoFeriasIndenizadas)}</td>
-                                          <td className="px-3 py-2 border-x border-slate-300"></td>
-                                      </tr>
-                                  </>
-                                  )}
-                                  
-                                  {/* DESCONTOS */}
-                                  <tr className="bg-white border-t border-slate-300">
-                                      <td className="px-3 py-2 text-red-700 font-medium border-x border-slate-300">INSS</td>
-                                      <td className="px-3 py-2 text-center text-slate-500 font-mono text-xs border-x border-slate-300">Desc.</td>
-                                      <td className="px-3 py-2 text-right font-mono border-x border-slate-300"></td>
-                                      <td className="px-3 py-2 text-right font-mono text-red-600 border-x border-slate-300">{formatCurrency(resultado.valINSS)}</td>
-                                  </tr>
-                              </tbody>
-                              <tfoot className="bg-slate-100 border-t-2 border-slate-300">
-                                  <tr>
-                                      <td className="px-3 py-3 font-bold text-slate-800 border-x border-slate-300">TOTAIS</td>
-                                      <td className="px-3 py-3 border-x border-slate-300"></td>
-                                      <td className="px-3 py-3 text-right font-bold font-mono text-slate-800 border-x border-slate-300">{formatCurrency(resultado.liquido + resultado.valINSS)}</td>
-                                      <td className="px-3 py-3 text-right font-bold font-mono text-red-600 border-x border-slate-300">{formatCurrency(resultado.valINSS)}</td>
-                                  </tr>
-                              </tfoot>
-                          </table>
-                      </div>
-
-                      {/* QUADRO DE RESUMO GERAL (NOVO DESIGN HIGH CONTRAST) */}
-                      <div className="flex flex-col gap-0 mb-12 border-2 border-slate-800 rounded-none overflow-hidden break-inside-avoid">
-                           <div className="flex flex-row divide-x-2 divide-slate-800 bg-white">
-                               <div className="flex-1 p-4 flex flex-col justify-center items-center text-center">
-                                   <span className="text-[10px] font-bold uppercase text-slate-500 mb-1">Rescisão Líquida a Receber</span>
-                                   <span className="font-mono font-bold text-lg text-slate-800">{formatCurrency(resultado.liquido)}</span>
-                               </div>
-                               <div className="flex-1 p-4 flex flex-col justify-center items-center text-center bg-slate-100">
-                                   <span className="text-[10px] font-bold uppercase text-slate-500 mb-1">Total FGTS + Multa</span>
-                                   <span className="font-mono font-bold text-lg text-slate-800">{formatCurrency(resultado.fgts.total)}</span>
-                               </div>
-                           </div>
-                           <div className="bg-white text-slate-900 p-6 flex justify-between items-center border-t-2 border-slate-800">
-                               <span className="text-sm md:text-base font-bold uppercase tracking-wider">Total Geral a Receber</span>
-                               <span className="font-mono font-black text-3xl">{formatCurrency(resultado.liquido + resultado.fgts.total)}</span>
-                           </div>
-                      </div>
-
-                      {/* ASSINATURAS */}
-                      <div className="flex justify-between items-end gap-16 mt-12 break-inside-avoid">
-                          <div className="text-center flex-1">
-                              <div className="border-t border-slate-800 w-full mb-2"></div>
-                              <span className="text-[10px] uppercase font-bold text-slate-500">Assinatura do Funcionário</span>
-                          </div>
-                          <div className="text-center flex-1">
-                              <div className="border-t border-slate-800 w-full mb-2"></div>
-                              <span className="text-[10px] uppercase font-bold text-slate-500">Assinatura do Empregador</span>
-                          </div>
-                      </div>
-
-                      {/* RODAPÉ CONTADOR */}
-                      <div className="mt-12 pt-4 border-t border-slate-300 flex items-center gap-4 break-inside-avoid">
-                          <div className="w-10 h-10 border-2 border-slate-800 text-slate-800 flex items-center justify-center font-bold text-xl rounded">L</div>
-                          <div>
-                              <p className="font-bold text-slate-900 text-sm uppercase">Lucas Araujo dos Santos</p>
-                              <div className="flex items-center gap-2 text-xs text-slate-600">
-                                  <span>Contador</span>
-                                  <span className="font-mono">CRC-BA: 046968/O-6</span>
-                              </div>
-                          </div>
-                      </div>
-                  </div>
-              </div>
-          </div>
-      )}
-
-      {/* MODAL DE EDIÇÃO DE PROVENTOS E TOTAIS */}
-      {isEditModalOpen && editValues && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-fade-in no-print">
-            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto animate-slide-up">
-                <div className="sticky top-0 bg-white border-b border-slate-100 p-6 flex justify-between items-center z-10">
-                    <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2">
-                        <span className="material-icons-round text-indigo-600">edit_note</span>
-                        Ajustar Valores Manualmente
-                    </h2>
-                    <button 
-                        onClick={() => setIsEditModalOpen(false)}
-                        className="text-slate-400 hover:text-slate-600 p-1 rounded-full hover:bg-slate-100 transition-colors"
-                    >
-                        <span className="material-icons-round text-2xl">close</span>
-                    </button>
-                </div>
+            {/* ÁREA DE IMPRESSÃO - PAPEL A4 */}
+            <div id="print-area" className="bg-white w-full max-w-[210mm] min-h-[297mm] p-8 md:p-12 shadow-2xl print:shadow-none print:w-full print:max-w-none print:p-0 mx-auto">
                 
-                <div className="p-6 space-y-8">
-                    {/* Seção FGTS */}
-                    <div className="bg-orange-50 border border-orange-100 rounded-xl p-4">
-                        <h3 className="font-bold text-orange-800 mb-4 flex items-center gap-2">
-                            <span className="material-icons-round">savings</span>
-                            FGTS (Saldo Total)
-                        </h3>
-                        <p className="text-xs text-orange-700 mb-3">
-                           Para um cálculo mais preciso, use o cartão principal na tela inicial.
-                        </p>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <FormInput 
-                                label="Saldo FGTS (Base para Multa)" 
-                                currency
-                                type="number" 
-                                name="saldoEstimado"
-                                value={editValues.fgts.saldoEstimado}
-                                onChange={(e) => handleEditChange(e, 'fgts')}
-                            />
-                            <FormInput 
-                                label="Multa 40%" 
-                                currency
-                                type="number" 
-                                name="multa"
-                                value={editValues.fgts.multa}
-                                onChange={(e) => handleEditChange(e, 'fgts')}
-                            />
+                {/* CABEÇALHO */}
+                <div className="flex justify-between items-start border-b-2 border-slate-800 pb-6 mb-8 print:pb-4 print:mb-4">
+                    <div>
+                        <h1 className="text-2xl font-bold text-slate-800 uppercase tracking-tight print:text-xl">Demonstrativo de Valores</h1>
+                        <p className="text-slate-500 uppercase text-xs tracking-widest mt-1">Cálculo Rescisório Trabalhista</p>
+                    </div>
+                    <div className="text-right">
+                        <div className="text-xs text-slate-400 uppercase tracking-wider">Data do Cálculo</div>
+                        <div className="text-lg font-bold text-slate-700 print:text-base">{new Date().toLocaleDateString('pt-BR')}</div>
+                    </div>
+                </div>
+
+                {/* DADOS DO CONTRATO */}
+                <div className="bg-slate-50 rounded-lg p-6 mb-8 border border-slate-100 print:p-3 print:mb-4 print:bg-slate-50 print:border-slate-200">
+                    <div className="grid grid-cols-4 gap-6 print:gap-2">
+                        <div>
+                            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Data de Admissão</div>
+                            <div className="font-semibold text-slate-700 print:text-sm">{new Date(formData.dataAdmissao + 'T00:00:00').toLocaleDateString('pt-BR')}</div>
+                        </div>
+                        <div>
+                            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Data de Demissão</div>
+                            <div className="font-semibold text-slate-700 print:text-sm">{new Date(formData.dataDemissao + 'T00:00:00').toLocaleDateString('pt-BR')}</div>
+                        </div>
+                        <div>
+                            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Tipo de Aviso</div>
+                            <div className="font-semibold text-slate-700 uppercase print:text-sm">{formData.tipoAviso}</div>
+                        </div>
+                        <div>
+                            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Projeção Aviso</div>
+                            <div className="font-semibold text-slate-700 print:text-sm">{resultado.dataProjecao}</div>
+                        </div>
+                        <div className="mt-4 print:mt-2">
+                            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Maior Remuneração</div>
+                            <div className="font-bold text-lg text-slate-800 print:text-base">{formatCurrency(formData.salarioBase + formData.adicionalInsalubridade)}</div>
                         </div>
                     </div>
+                </div>
 
-                    <div className="space-y-4">
-                         <h3 className="font-bold text-slate-700 border-b pb-2">Proventos</h3>
-                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <FormInput label="Saldo de Salário" currency type="number" name="valSaldoSalario" value={editValues.valSaldoSalario} onChange={handleEditChange} />
-                            <FormInput label="Aviso Prévio" currency type="number" name="valAviso" value={editValues.valAviso} onChange={handleEditChange} />
-                            <FormInput label="13º Proporcional" currency type="number" name="val13Proporcional" value={editValues.val13Proporcional} onChange={handleEditChange} />
-                            <FormInput label="13º Salário s/ Aviso Prévio Indenizado" currency type="number" name="val13Indenizado" value={editValues.val13Indenizado} onChange={handleEditChange} />
-                            <FormInput label="Férias Vencidas" currency type="number" name="valFeriasVencidas" value={editValues.valFeriasVencidas} onChange={handleEditChange} />
-                            <FormInput label="1/3 Férias Vencidas" currency type="number" name="valTercoFeriasVencidas" value={editValues.valTercoFeriasVencidas} onChange={handleEditChange} />
-                            <FormInput label="Férias Proporcionais" currency type="number" name="valFeriasProporcionais" value={editValues.valFeriasProporcionais} onChange={handleEditChange} />
-                            <FormInput label="1/3 Férias Prop." currency type="number" name="valTercoFeriasProp" value={editValues.valTercoFeriasProp} onChange={handleEditChange} />
-                            <FormInput label="Férias s/ Aviso Prévio Indenizado" currency type="number" name="valFeriasIndenizadas" value={editValues.valFeriasIndenizadas} onChange={handleEditChange} />
-                            <FormInput label="1/3 s/ Férias s/ Aviso Indenizado" currency type="number" name="valTercoFeriasIndenizadas" value={editValues.valTercoFeriasIndenizadas} onChange={handleEditChange} />
-                         </div>
+                {/* TABELA DE VALORES */}
+                <div className="mb-8 print:mb-4">
+                    <div className="grid grid-cols-12 gap-4 border-b border-slate-200 pb-2 mb-2 text-xs font-bold text-slate-500 uppercase tracking-wider print:mb-1 print:pb-1">
+                        <div className="col-span-6">Rubrica</div>
+                        <div className="col-span-2 text-center">Ref.</div>
+                        <div className="col-span-2 text-right">Proventos</div>
+                        <div className="col-span-2 text-right">Descontos</div>
                     </div>
-                    
-                    <div className="space-y-4">
-                         <h3 className="font-bold text-red-700 border-b border-red-100 pb-2">Descontos</h3>
-                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <FormInput label="INSS" currency type="number" name="valINSS" value={editValues.valINSS} onChange={handleEditChange} />
-                         </div>
+
+                    <div className="space-y-1 print:space-y-0 text-sm print:text-xs">
+                        {/* Linhas Condicionais: Só renderiza se valor > 0 */}
+                        <PrintRow label="Saldo de Salário" refText={`${resultado.diasTrabalhadosMes}d`} value={resultado.valSaldoSalario} type="prov" />
+                        <PrintRow label="Aviso Prévio" refText={`${resultado.diasAviso}d`} value={resultado.valAviso} type="prov" />
+                        
+                        <PrintRow label="13º Salário Proporcional" refText={`${resultado.avos13}/12`} value={resultado.val13Proporcional} type="prov" />
+                        <PrintRow label="13º s/ Aviso Prévio Indenizado" refText="-" value={resultado.val13Indenizado} type="prov" />
+                        
+                        <PrintRow label="Férias Vencidas" refText="-" value={resultado.valFeriasVencidas} type="prov" />
+                        <PrintRow label="1/3 s/ Férias Vencidas" refText="-" value={resultado.valTercoFeriasVencidas} type="prov" />
+                        
+                        <PrintRow label="Férias Proporcionais" refText={`${resultado.avosFerias}/12`} value={resultado.valFeriasProporcionais} type="prov" />
+                        <PrintRow label="1/3 s/ Férias Proporcionais" refText="-" value={resultado.valTercoFeriasProp} type="prov" />
+                        
+                        <PrintRow label="Férias s/ Aviso Prévio Indenizado" refText="-" value={resultado.valFeriasIndenizadas} type="prov" />
+                        <PrintRow label="1/3 s/ Aviso Prévio Indenizado" refText="-" value={resultado.valTercoFeriasIndenizadas} type="prov" />
+
+                        {/* Descontos */}
+                        <PrintRow label="INSS" refText="Desc." value={resultado.valINSS} type="desc" />
+
+                        {/* Totais Intermediários */}
+                        <div className="grid grid-cols-12 gap-4 pt-4 mt-4 border-t border-slate-200 font-bold text-slate-500 uppercase text-xs print:pt-2 print:mt-2">
+                             <div className="col-span-8">Totais</div>
+                             <div className="col-span-2 text-right">{formatCurrency(
+                                 resultado.valSaldoSalario + resultado.valAviso + resultado.val13Proporcional + resultado.val13Indenizado + resultado.valFeriasVencidas + resultado.valTercoFeriasVencidas + resultado.valFeriasProporcionais + resultado.valTercoFeriasProp + resultado.valFeriasIndenizadas + resultado.valTercoFeriasIndenizadas
+                             )}</div>
+                             <div className="col-span-2 text-right text-red-500">{formatCurrency(resultado.valINSS)}</div>
+                        </div>
                     </div>
                 </div>
 
-                <div className="sticky bottom-0 bg-white border-t border-slate-100 p-6 flex justify-end gap-3 z-10">
-                    <button 
-                        onClick={() => setIsEditModalOpen(false)}
-                        className="px-5 py-2.5 text-slate-600 font-medium hover:bg-slate-50 rounded-xl transition-colors"
-                    >
-                        Cancelar
-                    </button>
-                    <button 
-                        onClick={saveEdits}
-                        className="px-5 py-2.5 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 transition-colors shadow-lg shadow-indigo-100"
-                    >
-                        Salvar Alterações
-                    </button>
+                {/* TOTALIZADORES FINAIS */}
+                <div className="bg-slate-800 text-white rounded-lg p-6 print:p-4 print:bg-slate-800 print:text-white">
+                    <div className="grid grid-cols-2 gap-8 border-b border-slate-700 pb-4 mb-4 print:gap-4 print:pb-2 print:mb-2">
+                        <div>
+                            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Rescisão Líquida a Receber</div>
+                            <div className="text-xl font-bold print:text-lg">{formatCurrency(resultado.liquido)}</div>
+                        </div>
+                        <div className="text-right">
+                             <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Total FGTS + Multa</div>
+                             <div className="text-xl font-bold text-slate-300 print:text-lg">{formatCurrency(resultado.fgts.total)}</div>
+                        </div>
+                    </div>
+                    <div className="flex justify-between items-center">
+                         <div className="text-sm font-bold uppercase tracking-widest text-slate-300">Total Geral a Receber</div>
+                         <div className="text-3xl font-bold print:text-2xl">{formatCurrency(resultado.liquido + resultado.fgts.total)}</div>
+                    </div>
                 </div>
+                
+                {/* ASSINATURAS */}
+                {includeSignatures && (
+                    <div className="mt-16 grid grid-cols-2 gap-12 print:mt-10 print:gap-8">
+                        <div className="border-t border-slate-400 pt-2 text-center">
+                            <div className="text-xs font-bold uppercase text-slate-400">Assinatura do Funcionário</div>
+                        </div>
+                        <div className="border-t border-slate-400 pt-2 text-center">
+                            <div className="text-xs font-bold uppercase text-slate-400">Assinatura do Empregador</div>
+                        </div>
+                    </div>
+                )}
+
+                {/* RODAPÉ DO CONTADOR */}
+                <div className="mt-12 pt-6 border-t border-slate-200 flex items-center gap-4 print:mt-8 print:pt-4">
+                     <div className="w-10 h-10 bg-slate-800 text-white flex items-center justify-center font-bold text-lg rounded">L</div>
+                     <div>
+                         <div className="font-bold text-slate-800 text-sm uppercase">Lucas Araujo dos Santos</div>
+                         <div className="text-xs text-slate-500">Contador &bull; CRC-BA: 046968/O-6</div>
+                     </div>
+                </div>
+
             </div>
         </div>
       )}
 
-      {/* MODAL DETALHADO DE FGTS */}
+      {/* MODAL DE EDIÇÃO */}
+      {isEditModalOpen && editValues && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden animate-slide-up">
+            <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+              <h3 className="font-bold text-lg text-slate-800">Ajuste Manual de Valores</h3>
+              <button onClick={() => setIsEditModalOpen(false)} className="text-slate-400 hover:text-slate-600">
+                <span className="material-icons-round">close</span>
+              </button>
+            </div>
+            
+            <div className="p-6 max-h-[60vh] overflow-y-auto space-y-4">
+                <div className="space-y-4">
+                    <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Verbas Rescisórias</h4>
+                    <FormInput label="Saldo de Salário" type="number" name="valSaldoSalario" value={editValues.valSaldoSalario} onChange={handleEditChange} currency />
+                    <FormInput label="Aviso Prévio" type="number" name="valAviso" value={editValues.valAviso} onChange={handleEditChange} currency />
+                    <FormInput label="13º Salário Prop." type="number" name="val13Proporcional" value={editValues.val13Proporcional} onChange={handleEditChange} currency />
+                    <FormInput label="Férias Proporcionais" type="number" name="valFeriasProporcionais" value={editValues.valFeriasProporcionais} onChange={handleEditChange} currency />
+                    <FormInput label="1/3 Férias Prop." type="number" name="valTercoFeriasProp" value={editValues.valTercoFeriasProp} onChange={handleEditChange} currency />
+                </div>
+                
+                <div className="pt-4 border-t border-slate-100">
+                    <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4">FGTS</h4>
+                    <FormInput label="Saldo FGTS Estimado" type="number" name="saldoEstimado" value={editValues.fgts.saldoEstimado} onChange={(e) => handleEditChange(e, 'fgts')} currency />
+                </div>
+
+                <div className="pt-4 border-t border-slate-100">
+                    <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4">Descontos</h4>
+                    <FormInput label="INSS" type="number" name="valINSS" value={editValues.valINSS} onChange={handleEditChange} currency />
+                </div>
+            </div>
+
+            <div className="p-4 border-t border-slate-100 bg-slate-50 flex justify-end gap-3">
+              <button onClick={() => setIsEditModalOpen(false)} className="px-4 py-2 text-slate-600 font-semibold hover:bg-slate-200 rounded-lg">Cancelar</button>
+              <button onClick={saveEdits} className="px-6 py-2 bg-indigo-600 text-white font-bold rounded-lg hover:bg-indigo-700 shadow-lg shadow-indigo-200">Salvar Alterações</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL DE FGTS DETALHADO */}
       {isFgtsModalOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-fade-in no-print">
-              <div className="bg-white rounded-2xl shadow-2xl w-full max-w-xl max-h-[90vh] flex flex-col animate-slide-up">
-                  <div className="p-6 border-b border-slate-100 flex justify-between items-start bg-slate-50 rounded-t-2xl">
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+              <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden animate-slide-up flex flex-col max-h-[85vh]">
+                  <div className="p-6 border-b border-slate-100 bg-slate-50 flex justify-between items-center shrink-0">
                       <div>
-                          <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2">
-                              <span className="material-icons-round text-orange-500">history_edu</span>
-                              Configuração do FGTS
-                          </h2>
-                          <p className="text-sm text-slate-500 mt-1">Informe o saldo manualmente OU calcule mês a mês.</p>
+                          <h3 className="font-bold text-lg text-slate-800">Cálculo Detalhado do FGTS</h3>
+                          <p className="text-xs text-slate-500">Informe os salários mês a mês para maior precisão</p>
                       </div>
-                      <button onClick={() => setIsFgtsModalOpen(false)} className="text-slate-400 hover:text-slate-600"><span className="material-icons-round">close</span></button>
+                      <button onClick={() => setIsFgtsModalOpen(false)} className="text-slate-400 hover:text-slate-600">
+                          <span className="material-icons-round">close</span>
+                      </button>
                   </div>
 
-                  <div className="overflow-y-auto flex-1 p-6 space-y-6">
-                      {/* OPÇÃO 1: SALDO MANUAL */}
-                      <div className="bg-orange-50 p-4 rounded-xl border border-orange-100">
-                          <h3 className="font-bold text-orange-800 mb-2 text-sm uppercase tracking-wide">Opção 1: Saldo Consolidado</h3>
-                          <p className="text-xs text-orange-600 mb-3">Se você já sabe o saldo para fins rescisórios do extrato, informe aqui. O sistema ignorará a tabela abaixo.</p>
-                          <div className="relative">
-                              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-orange-400 pointer-events-none material-icons-round text-lg">account_balance_wallet</span>
-                              <input 
-                                  type="number" 
-                                  placeholder="Informe o saldo total para fins rescisórios"
-                                  value={fgtsManualBalance}
-                                  onChange={(e) => setFgtsManualBalance(e.target.value)}
-                                  className="w-full pl-10 pr-4 py-3 bg-white border border-orange-200 rounded-xl focus:ring-2 focus:ring-orange-200 focus:border-orange-500 outline-none text-orange-800 font-bold placeholder-orange-300"
-                              />
+                  <div className="p-6 overflow-y-auto grow bg-slate-50/50">
+                      
+                      {/* OPÇÃO 1: SALDO TOTAL MANUAL */}
+                      <div className="bg-white p-4 rounded-xl shadow-sm border border-orange-100 mb-6">
+                          <h4 className="font-bold text-orange-600 mb-2 flex items-center gap-2">
+                              <span className="material-icons-round">account_balance_wallet</span>
+                              Opção Rápida: Saldo Extrato
+                          </h4>
+                          <p className="text-xs text-slate-500 mb-3">Se você já tem o extrato do FGTS, informe apenas o saldo total para fins rescisórios.</p>
+                          <FormInput 
+                              label="Saldo para Fins Rescisórios" 
+                              type="number" 
+                              value={fgtsManualBalance} 
+                              onChange={(e) => setFgtsManualBalance(e.target.value)} 
+                              currency
+                              placeholder="0,00"
+                          />
+                      </div>
+
+                      {/* OPÇÃO 2: TABELA MÊS A MÊS */}
+                      <div className={`transition-opacity duration-300 ${fgtsManualBalance ? 'opacity-50 pointer-events-none grayscale' : 'opacity-100'}`}>
+                          <div className="flex justify-between items-center mb-4">
+                              <h4 className="font-bold text-slate-700">Histórico de Remuneração</h4>
+                              <button 
+                                  onClick={fillWithMinimumWage}
+                                  className="text-xs font-bold text-indigo-600 hover:text-indigo-800 bg-indigo-50 px-3 py-1.5 rounded-lg border border-indigo-100"
+                              >
+                                  Preencher com Salário Mínimo
+                              </button>
                           </div>
-                      </div>
-
-                      <div className="flex items-center gap-4">
-                          <div className="h-px bg-slate-200 flex-1"></div>
-                          <span className="text-xs font-bold text-slate-400 uppercase">OU Calcule por Histórico</span>
-                          <div className="h-px bg-slate-200 flex-1"></div>
-                      </div>
-
-                      {/* OPÇÃO 2: TABELA DE MESES */}
-                      <div className="space-y-4">
-                          <button 
-                              onClick={fillWithMinimumWage}
-                              disabled={!!fgtsManualBalance}
-                              className={`w-full py-3 px-4 font-semibold rounded-xl border transition-colors flex items-center justify-center gap-2 ${!!fgtsManualBalance ? 'bg-slate-50 text-slate-400 border-slate-100 cursor-not-allowed' : 'bg-emerald-50 text-emerald-700 border-emerald-100 hover:bg-emerald-100'}`}
-                          >
-                              <span className="material-icons-round">auto_fix_high</span>
-                              Preencher com Salário Mínimo da Época
-                          </button>
-
-                          <div className={`grid grid-cols-1 sm:grid-cols-2 gap-4 ${!!fgtsManualBalance ? 'opacity-40 pointer-events-none' : ''}`}>
-                              {fgtsMonths.length === 0 ? (
-                                  <div className="col-span-2 text-center text-slate-400 py-6 text-sm">
-                                      Nenhum mês encontrado no período informado.
+                          
+                          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                              {fgtsMonths.map(month => (
+                                  <div key={month} className="bg-white p-2 rounded-lg border border-slate-200">
+                                      <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">{month.split('-').reverse().join('/')}</label>
+                                      <div className="relative">
+                                          <span className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-400 text-xs font-sans">R$</span>
+                                          <input 
+                                              type="number" 
+                                              className="w-full pl-6 pr-2 py-1 text-sm font-medium text-slate-700 outline-none rounded bg-transparent focus:bg-slate-50"
+                                              value={fgtsSalaries[month] || ''}
+                                              onChange={(e) => handleFgtsSalaryChange(month, e.target.value)}
+                                              placeholder="0,00"
+                                          />
+                                      </div>
                                   </div>
-                              ) : (
-                                  fgtsMonths.map((monthKey) => {
-                                      const [year, month] = monthKey.split('-');
-                                      return (
-                                          <div key={monthKey} className="bg-slate-50 p-3 rounded-xl border border-slate-100">
-                                              <label className="block text-xs font-bold text-slate-500 mb-1">
-                                                  {month}/{year}
-                                              </label>
-                                              <div className="relative">
-                                                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm font-bold">R$</span>
-                                                  <input
-                                                      type="number"
-                                                      value={fgtsSalaries[monthKey] || ''}
-                                                      onChange={(e) => handleFgtsSalaryChange(monthKey, e.target.value)}
-                                                      className="w-full pl-9 pr-3 py-2 bg-white border border-slate-200 rounded-lg text-sm font-medium focus:ring-2 focus:ring-orange-200 focus:border-orange-400 outline-none"
-                                                      placeholder="0,00"
-                                                  />
-                                              </div>
-                                          </div>
-                                      );
-                                  })
-                              )}
+                              ))}
                           </div>
                       </div>
                   </div>
 
-                  <div className="p-6 border-t border-slate-100 bg-slate-50 rounded-b-2xl flex justify-end gap-3">
-                      <button 
-                          onClick={() => setIsFgtsModalOpen(false)}
-                          className="px-5 py-2.5 text-slate-600 font-medium hover:bg-slate-200 rounded-xl transition-colors"
-                      >
-                          Cancelar
-                      </button>
-                      <button 
-                          onClick={saveFgtsDetail}
-                          className="px-5 py-2.5 bg-orange-600 text-white font-bold rounded-xl hover:bg-orange-700 transition-colors shadow-lg shadow-orange-100 flex items-center gap-2"
-                      >
-                          <span className="material-icons-round text-sm">save</span>
-                          Salvar e Recalcular
-                      </button>
+                  <div className="p-4 border-t border-slate-100 bg-white shrink-0 flex justify-end gap-3">
+                      <button onClick={() => setIsFgtsModalOpen(false)} className="px-4 py-2 text-slate-600 font-semibold hover:bg-slate-100 rounded-lg">Cancelar</button>
+                      <button onClick={saveFgtsDetail} className="px-6 py-2 bg-indigo-600 text-white font-bold rounded-lg hover:bg-indigo-700 shadow-lg shadow-indigo-200">Atualizar FGTS</button>
                   </div>
               </div>
           </div>
       )}
+
     </div>
   );
 };
 
-const root = createRoot(document.getElementById('root')!);
-root.render(<App />);
+// Componente auxiliar para linha de impressão
+const PrintRow = ({ label, refText, value, type }: { label: string, refText: string, value: number, type: 'prov' | 'desc' }) => {
+    // Só renderiza se o valor for significativo (> 0.01)
+    if (value <= 0.01) return null;
+
+    return (
+        <div className={`grid grid-cols-12 gap-4 py-1 border-b border-slate-100 ${type === 'prov' ? 'bg-slate-50/50' : 'bg-red-50/10'}`}>
+            <div className="col-span-6 pl-2">{label}</div>
+            <div className="col-span-2 text-center text-slate-500">{refText}</div>
+            <div className={`col-span-2 text-right ${type === 'prov' ? 'font-medium text-slate-700' : 'text-slate-300'}`}>
+                {type === 'prov' ? formatCurrency(value) : '-'}
+            </div>
+            <div className={`col-span-2 text-right ${type === 'desc' ? 'font-medium text-red-500' : 'text-slate-300'}`}>
+                {type === 'desc' ? formatCurrency(value) : '-'}
+            </div>
+        </div>
+    );
+};
+
+const container = document.getElementById('root');
+if (container) {
+  const root = createRoot(container);
+  root.render(<App />);
+}
