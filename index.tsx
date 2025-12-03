@@ -25,13 +25,6 @@ const diffDays = (d1: Date, d2: Date): number => {
   return Math.round(Math.abs((d1.getTime() - d2.getTime()) / oneDay));
 };
 
-const getMonthDifference = (d1: Date, d2: Date): number => {
-  let months = (d2.getFullYear() - d1.getFullYear()) * 12;
-  months -= d1.getMonth();
-  months += d2.getMonth();
-  return months <= 0 ? 0 : months;
-};
-
 // Histórico de Salário Mínimo
 const HISTORICO_SALARIO_MINIMO = [
   { date: '2025-01-01', value: 1518.00 },
@@ -198,6 +191,7 @@ const FormInput = ({ label, type = "text", className = "", options, ...props }: 
 
 function App() {
   const [formData, setFormData] = useState({
+    motivo: 'dispensa' as 'dispensa' | 'pedido', // Novo campo
     salarioBase: 2500,
     insalubridade: 0,
     dataAdmissao: '2023-12-03',
@@ -221,16 +215,19 @@ function App() {
   // Configs
   const [printSignatures, setPrintSignatures] = useState(true);
 
-  // Inicializa a lista de meses do FGTS quando as datas mudam
+  // Inicializa a lista de meses do FGTS
   useEffect(() => {
     if (formData.dataAdmissao && formData.dataDemissao) {
       const start = parseDate(formData.dataAdmissao);
       const end = parseDate(formData.dataDemissao);
+      
+      // Validação de segurança para não travar o navegador
+      if (isNaN(start.getTime()) || isNaN(end.getTime()) || start > end) return;
+
       const dates = [];
       let current = new Date(start.getFullYear(), start.getMonth(), 1);
       
-      // FIX: O loop deve ir até o mês ANTERIOR à demissão.
-      // O mês da demissão é calculado via Saldo de Salário (na rescisão).
+      // O loop deve ir até o mês ANTERIOR à demissão para a lista manual.
       const endDate = new Date(end.getFullYear(), end.getMonth() - 1, 1);
 
       while (current <= endDate) {
@@ -240,7 +237,12 @@ function App() {
         });
         current = new Date(current.getFullYear(), current.getMonth() + 1, 1);
       }
-      setFgtsManualData(dates);
+      
+      // Só atualiza se o tamanho mudar drasticamente para evitar resetar valores enquanto digita (em um cenário real seria melhor comparar)
+      setFgtsManualData(prev => {
+          if (prev.length === dates.length && prev.length > 0 && prev[0].date === dates[0].date) return prev;
+          return dates;
+      });
     }
   }, [formData.dataAdmissao, formData.dataDemissao]);
 
@@ -256,23 +258,51 @@ function App() {
     const admissao = parseDate(formData.dataAdmissao);
     const demissao = parseDate(formData.dataDemissao);
     const feriasVencidasQtd = Number(formData.feriasVencidasQtd);
+    const isPedidoDemissao = formData.motivo === 'pedido';
 
     // 1. Aviso Prévio
     let diasAviso = 30;
-    const anosTrabalhados = Math.floor(diffDays(demissao, admissao) / 365.25);
-    diasAviso += Math.min(anosTrabalhados * 3, 60);
     
-    let valorAviso = 0;
+    // Regra da lei 12.506 (3 dias por ano) só aplica se for dispensa pelo empregador
+    if (!isPedidoDemissao) {
+        const anosTrabalhados = Math.floor(diffDays(demissao, admissao) / 365.25);
+        diasAviso += Math.min(anosTrabalhados * 3, 60);
+    } else {
+        // Se for pedido de demissão, é sempre 30 dias (seja trabalhado ou descontado)
+        diasAviso = 30;
+    }
+    
+    // Cálculo do valor do Aviso
+    let valorAvisoProvento = 0;
+    let valorAvisoDesconto = 0;
+    
+    // Data de projeção só existe se for dispensa sem justa causa
     const projecaoAviso = new Date(demissao);
-    projecaoAviso.setDate(demissao.getDate() + diasAviso);
+    if (!isPedidoDemissao) {
+        projecaoAviso.setDate(demissao.getDate() + diasAviso);
+    } else {
+        // No pedido de demissão, o contrato encerra na demissão (ou fim do aviso trabalhado), não projeta para fins de 13º/Férias Indenizados
+    }
 
     if (formData.avisoTipo === 'indenizado') {
-        valorAviso = (salarioTotal / 30) * diasAviso;
-    } else {
-        const diasIndenizados = diasAviso - 30;
-        if (diasIndenizados > 0) {
-            valorAviso = (salarioTotal / 30) * diasIndenizados;
+        if (isPedidoDemissao) {
+            // Pedido de Demissão + Indenizado = Funcionário não cumpriu. Desconto.
+            // Regra: Descontar 30 dias (ignorando projeção de anos)
+            valorAvisoDesconto = (salarioTotal / 30) * 30; // Sempre 30 dias
+        } else {
+            // Dispensa + Indenizado = Empresa paga. Provento.
+            valorAvisoProvento = (salarioTotal / 30) * diasAviso;
         }
+    } else {
+        // Trabalhado
+        if (!isPedidoDemissao) {
+            // Se dispensa + trabalhado: Paga dias adicionais da Lei 12.506 como indenizado
+            const diasIndenizados = diasAviso - 30;
+            if (diasIndenizados > 0) {
+                valorAvisoProvento = (salarioTotal / 30) * diasIndenizados;
+            }
+        }
+        // Se pedido + trabalhado: Recebe saldo de salário normal, aviso é 0.
     }
 
     // 2. Saldo de Salário
@@ -284,14 +314,18 @@ function App() {
     const calcularAvos13 = (inicio: Date, fim: Date) => {
         let avos = 0;
         let current = new Date(inicio.getFullYear(), inicio.getMonth(), 1);
+        
+        // Se mesmo ano
         if (inicio.getFullYear() === fim.getFullYear()) {
              while(current <= fim) {
                  const ultimoDiaMes = new Date(current.getFullYear(), current.getMonth() + 1, 0).getDate();
                  let diasTrabNoMes = 30;
+                 // Mês inicial
                  if (current.getMonth() === inicio.getMonth() && current.getFullYear() === inicio.getFullYear()) {
                      diasTrabNoMes = 30 - inicio.getDate() + 1;
                      if (inicio.getDate() === 31) diasTrabNoMes = 0;
                  }
+                 // Mês final
                  if (current.getMonth() === fim.getMonth() && current.getFullYear() === fim.getFullYear()) {
                      diasTrabNoMes = fim.getDate();
                      if (fim.getDate() === 31) diasTrabNoMes = 30;
@@ -301,11 +335,15 @@ function App() {
              }
              return avos;
         } 
+        
+        // Se anos diferentes, conta do inicio do ano da demissão
         const inicioAno = new Date(fim.getFullYear(), 0, 1);
-        let meses = fim.getMonth(); 
+        // Lógica simplificada para ano da demissão
+        let meses = fim.getMonth(); // Janeiro = 0
         if (fim.getDate() >= 15) meses++;
         return meses;
     };
+    
     const avos13 = calcularAvos13(admissao, demissao);
     const valor13 = (salarioTotal / 12) * avos13;
 
@@ -333,12 +371,12 @@ function App() {
     const valorFeriasProp = (salarioTotal / 12) * avosFeriasCalc;
     const tercoFeriasProp = valorFeriasProp / 3;
 
-    // 5. Indenizações (Projeção)
+    // 5. Indenizações (Projeção) - SÓ SE NÃO FOR PEDIDO DE DEMISSÃO
     let valor13Indenizado = 0;
     let valorFeriasIndenizado = 0;
     let tercoFeriasIndenizado = 0;
     
-    if (formData.avisoTipo === 'indenizado') {
+    if (!isPedidoDemissao && formData.avisoTipo === 'indenizado') {
         const avos13ComProjecao = calcularAvos13(admissao, projecaoAviso);
         const diffAvos13 = Math.max(0, avos13ComProjecao - avos13);
         if (diffAvos13 > 0) valor13Indenizado = (salarioTotal / 12) * diffAvos13;
@@ -370,33 +408,54 @@ function App() {
         saldoFGTSParaMulta = fgtsManualData.reduce((acc, curr) => acc + curr.value, 0);
     }
 
-    const baseFGTSRescisao = saldoSalario + valor13 + (formData.avisoTipo === 'trabalhado' ? valorAviso : 0);
+    // Depósito do mês da rescisão (Sempre devido, exceto justa causa, mas aqui assumimos sem justa causa ou pedido)
+    // Se aviso indenizado (PROVENTO), incide FGTS. Se Desconto, não.
+    const baseFGTSRescisao = saldoSalario + valor13 + (valorAvisoProvento > 0 ? valorAvisoProvento : 0);
     const fgtsRescisao = baseFGTSRescisao * 0.08;
     
-    const baseFGTSAvisoIndenizado = formData.avisoTipo === 'indenizado' ? valorAviso + valor13Indenizado : 0;
+    // FGTS sobre 13º Indenizado
+    const baseFGTSAvisoIndenizado = valor13Indenizado; 
     const fgtsAvisoIndenizado = baseFGTSAvisoIndenizado * 0.08;
 
     const baseTotalMulta = saldoFGTSParaMulta + fgtsRescisao + fgtsAvisoIndenizado;
-    const multa40 = baseTotalMulta * 0.4;
-    const totalContaFGTS = baseTotalMulta + multa40;
+    
+    // Se pedido de demissão, multa é 0.
+    const multa40 = isPedidoDemissao ? 0 : baseTotalMulta * 0.4;
+    
+    // Total Conta: Se pedido demissão, funcionário não saca. 
+    // Mas para fins de cálculo de custo/demonstrativo, o valor existe na conta vinculada.
+    // O usuário pediu "FGTS saíra zerado". Vou zerar o total de saque se for pedido.
+    const totalContaFGTS = isPedidoDemissao ? 0 : (baseTotalMulta + multa40);
 
     // 7. Descontos
-    const baseINSS = saldoSalario + valor13;
+    const baseINSS = saldoSalario + valor13; // Aviso Indenizado não incide INSS
     const descontoINSS = calcularINSS(baseINSS);
 
     // 8. Totais
-    const totalProventos = saldoSalario + valorAviso + valor13 + valorFeriasVencidas + tercoFeriasVencidas + valorFeriasProp + tercoFeriasProp + valor13Indenizado + valorFeriasIndenizado + tercoFeriasIndenizado;
+    // Aviso Provento entra aqui
+    const totalProventos = saldoSalario + valorAvisoProvento + valor13 + valorFeriasVencidas + tercoFeriasVencidas + valorFeriasProp + tercoFeriasProp + valor13Indenizado + valorFeriasIndenizado + tercoFeriasIndenizado;
+    
+    // Aviso Desconto entra aqui
+    const totalDescontosAutomaticos = descontoINSS + valorAvisoDesconto;
+
     const totalAjustesProventos = ajustes.filter(a => a.tipo === 'Provento').reduce((acc, c) => acc + c.valor, 0);
     const totalAjustesDescontos = ajustes.filter(a => a.tipo === 'Desconto').reduce((acc, c) => acc + c.valor, 0);
-    const rescisaoLiquida = (totalProventos + totalAjustesProventos) - (descontoINSS + totalAjustesDescontos);
+    
+    const rescisaoLiquida = (totalProventos + totalAjustesProventos) - (totalDescontosAutomaticos + totalAjustesDescontos);
+    
+    // Total Geral (Líquido + Saque FGTS)
     const totalGeral = rescisaoLiquida + totalContaFGTS;
 
     setCalculo({
-        saldoSalario, diasTrabalhados, valorAviso, diasAviso, projecaoAviso, valor13, avos13,
+        saldoSalario, diasTrabalhados, 
+        valorAviso: valorAvisoProvento, // Visualização positiva
+        valorAvisoDesconto, // Visualização negativa
+        diasAviso, projecaoAviso, valor13, avos13,
         valorFeriasVencidas, tercoFeriasVencidas, valorFeriasProp, tercoFeriasProp, avosFerias: avosFeriasCalc,
         valor13Indenizado, valorFeriasIndenizado, tercoFeriasIndenizado,
         fgtsRescisao, fgtsAvisoIndenizado, multa40, totalContaFGTS, saldoFGTSBase: saldoFGTSParaMulta,
-        descontoINSS, rescisaoLiquida, totalGeral
+        descontoINSS, rescisaoLiquida, totalGeral,
+        isPedidoDemissao
     });
   };
 
@@ -445,13 +504,52 @@ function App() {
           {/* Inputs */}
           <div className="lg:col-span-5 xl:col-span-4 space-y-6">
             <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+                
+                {/* Seletor de Motivo */}
+                <div className="mb-6">
+                    <label className="block text-sm font-semibold text-slate-700 mb-2">Motivo da Rescisão</label>
+                    <div className="grid grid-cols-2 gap-2 bg-slate-100 p-1.5 rounded-xl">
+                        <button
+                            type="button"
+                            onClick={() => setFormData(prev => ({ ...prev, motivo: 'dispensa' }))}
+                            className={`py-2 px-3 rounded-lg text-sm font-medium transition-all ${formData.motivo === 'dispensa' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                        >
+                            Sem Justa Causa
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setFormData(prev => ({ ...prev, motivo: 'pedido' }))}
+                            className={`py-2 px-3 rounded-lg text-sm font-medium transition-all ${formData.motivo === 'pedido' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                        >
+                            Pedido de Demissão
+                        </button>
+                    </div>
+                </div>
+
                 <FormInput label="Salário Base (R$)" name="salarioBase" type="number" value={formData.salarioBase} onChange={handleInputChange} />
                 <FormInput label="Adicional Insalubridade (R$)" name="insalubridade" type="number" value={formData.insalubridade} onChange={handleInputChange} />
                 <div className="grid grid-cols-2 gap-4">
                     <FormInput label="Data Admissão" name="dataAdmissao" type="date" value={formData.dataAdmissao} onChange={handleInputChange} />
                     <FormInput label="Data Demissão" name="dataDemissao" type="date" value={formData.dataDemissao} onChange={handleInputChange} />
                 </div>
-                <FormInput label="Tipo de Aviso Prévio" name="avisoTipo" options={[{ value: 'trabalhado', label: 'Trabalhado' }, { value: 'indenizado', label: 'Indenizado' }]} value={formData.avisoTipo} onChange={handleInputChange} />
+                <FormInput 
+                    label="Tipo de Aviso Prévio" 
+                    name="avisoTipo" 
+                    options={[
+                        { value: 'trabalhado', label: 'Trabalhado' }, 
+                        { value: 'indenizado', label: 'Indenizado' }
+                    ]} 
+                    value={formData.avisoTipo} 
+                    onChange={handleInputChange} 
+                />
+                
+                {/* Info dinâmica sobre o aviso */}
+                {formData.motivo === 'pedido' && formData.avisoTipo === 'indenizado' && (
+                    <div className="bg-orange-50 text-orange-700 text-xs p-3 rounded-lg mb-4 border border-orange-100">
+                        <strong>Nota:</strong> Como é pedido de demissão indenizado, o valor será descontado (30 dias).
+                    </div>
+                )}
+
                 <FormInput label="Férias Vencidas (Períodos)" name="feriasVencidasQtd" type="number" value={formData.feriasVencidasQtd} onChange={handleInputChange} />
                 
                 <button onClick={handleCalcular} className="w-full mt-4 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white font-bold py-3.5 px-4 rounded-xl shadow-lg shadow-indigo-200 transition-all transform active:scale-95 flex items-center justify-center gap-2">
@@ -473,7 +571,7 @@ function App() {
                         <Card className="bg-gradient-to-br from-indigo-500 to-indigo-600 border-none text-white shadow-xl shadow-indigo-200" delay="delay-100">
                              <div className="text-indigo-100 text-sm font-medium mb-1">Total Geral a Receber</div>
                              <div className="text-3xl font-bold tracking-tight">{formatCurrency(calculo.totalGeral)}</div>
-                             <div className="mt-2 text-indigo-200 text-xs">Rescisão Líquida + FGTS GRRF</div>
+                             <div className="mt-2 text-indigo-200 text-xs">Rescisão Líquida {calculo.isPedidoDemissao ? '' : '+ FGTS (Saque)'}</div>
                         </Card>
                         <Card title="Rescisão Líquida a Receber" icon="payments" delay="delay-200">
                             <div className="text-2xl font-bold text-slate-800 mt-2">{formatCurrency(calculo.rescisaoLiquida)}</div>
@@ -482,15 +580,27 @@ function App() {
                     </div>
 
                     <Card title="FGTS + Multa 40%" icon="savings" delay="delay-300" onClick={() => setShowFGTSModal(true)} action={<span className="text-xs font-bold text-indigo-600 bg-indigo-50 px-2 py-1 rounded uppercase">Editar</span>}>
-                        <ResultRow label="Saldo FGTS Fins Rescisórios" value={calculo.saldoFGTSBase + calculo.fgtsRescisao + calculo.fgtsAvisoIndenizado} subtext="Base para multa" />
-                        <ResultRow label="Multa 40%" value={calculo.multa40} />
-                        <ResultRow label="Total FGTS (Saque)" value={calculo.totalContaFGTS} isTotal />
+                        {calculo.isPedidoDemissao ? (
+                            <div className="text-sm text-slate-500 italic py-2">
+                                Pedido de Demissão: Sem multa de 40% e sem saque imediato. 
+                                <br/><span className="text-xs text-slate-400">(Apenas depósito do mês devido)</span>
+                            </div>
+                        ) : (
+                            <>
+                                <ResultRow label="Saldo FGTS Fins Rescisórios" value={calculo.saldoFGTSBase + calculo.fgtsRescisao + calculo.fgtsAvisoIndenizado} subtext="Base para multa" />
+                                <ResultRow label="Multa 40%" value={calculo.multa40} />
+                                <ResultRow label="Total FGTS (Saque)" value={calculo.totalContaFGTS} isTotal />
+                            </>
+                        )}
                     </Card>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <Card title="Proventos" icon="add_circle_outline" delay="delay-400" action={<button onClick={() => setShowAdjustModal(true)} className="text-xs font-bold text-indigo-600 hover:text-indigo-800">AJUSTAR</button>}>
                             <ResultRow label="Saldo de Salário" value={calculo.saldoSalario} subtext={`${calculo.diasTrabalhados} dias`} />
-                            <ResultRow label="Aviso Prévio" value={calculo.valorAviso} subtext={`${calculo.diasAviso} dias`} hideIfZero />
+                            
+                            {/* Se aviso for provento (Dispensa + Indenizado ou Dispensa + Trab + Projeção) */}
+                            <ResultRow label="Aviso Prévio Indenizado" value={calculo.valorAviso} subtext={`${calculo.diasAviso} dias`} hideIfZero />
+                            
                             {calculo.valor13Indenizado > 0 && <ResultRow label="13º Salário s/ Aviso Prévio Indenizado" value={calculo.valor13Indenizado} subtext="1/12 avos" />}
                             {calculo.valorFeriasIndenizado > 0 && <><ResultRow label="Férias s/ Aviso Prévio Indenizado" value={calculo.valorFeriasIndenizado} /><ResultRow label="1/3 s/ Férias Indenizadas" value={calculo.tercoFeriasIndenizado} /></>}
                             <ResultRow label="13º Salário Proporcional" value={calculo.valor13} subtext={`${calculo.avos13}/12 avos`} />
@@ -502,6 +612,8 @@ function App() {
                         </Card>
                         <Card title="Descontos" icon="remove_circle_outline" delay="delay-500">
                             <ResultRow label="INSS" value={calculo.descontoINSS} isNegative />
+                            {/* Aviso Desconto (Pedido + Indenizado) */}
+                            <ResultRow label="Aviso Prévio (Não Trabalhado)" value={calculo.valorAvisoDesconto} subtext="30 dias" isNegative hideIfZero />
                             {ajustes.filter(a => a.tipo === 'Desconto').map((aj, idx) => <ResultRow key={idx} label={aj.descricao} value={aj.valor} subtext="Manual" isNegative />)}
                         </Card>
                     </div>
@@ -613,7 +725,7 @@ function App() {
                         <div className="border-b-2 border-slate-900 pb-4 mb-6 flex justify-between items-start">
                             <div>
                                 <h1 className="text-xl font-bold uppercase tracking-wider">Demonstrativo de Valores</h1>
-                                <p className="text-xs font-semibold text-slate-500 uppercase mt-1">Cálculo Rescisório Trabalhista</p>
+                                <p className="text-xs font-semibold text-slate-500 uppercase mt-1">Cálculo Rescisório Trabalhista ({calculo.isPedidoDemissao ? 'Pedido de Demissão' : 'Dispensa sem Justa Causa'})</p>
                             </div>
                             <div className="text-right">
                                 <div className="text-[10px] text-slate-500 uppercase">Data do Cálculo</div>
@@ -649,7 +761,7 @@ function App() {
                                 </tr>
                                 {calculo.valorAviso > 0 && (
                                 <tr className="border-b border-slate-200 bg-slate-50">
-                                    <td className="p-2">Aviso Prévio</td>
+                                    <td className="p-2">Aviso Prévio Indenizado</td>
                                     <td className="p-2 text-center text-slate-500">{calculo.diasAviso}d</td>
                                     <td className="p-2 text-right font-mono">{formatCurrency(calculo.valorAviso)}</td>
                                     <td className="p-2 text-right font-mono"></td>
@@ -731,6 +843,16 @@ function App() {
                                     <td className="p-2 text-right font-mono"></td>
                                     <td className="p-2 text-right font-mono">{formatCurrency(calculo.descontoINSS)}</td>
                                 </tr>
+                                
+                                {calculo.valorAvisoDesconto > 0 && (
+                                <tr className="border-b border-slate-200 text-red-700">
+                                    <td className="p-2">Aviso Prévio (Não Trabalhado)</td>
+                                    <td className="p-2 text-center text-slate-500">30d</td>
+                                    <td className="p-2 text-right font-mono"></td>
+                                    <td className="p-2 text-right font-mono">{formatCurrency(calculo.valorAvisoDesconto)}</td>
+                                </tr>
+                                )}
+
                                 {ajustes.filter(a => a.tipo === 'Desconto').map((aj, idx) => (
                                     <tr key={`desc-${idx}`} className="border-b border-slate-200 text-red-700">
                                         <td className="p-2">{aj.descricao}</td>
@@ -743,13 +865,14 @@ function App() {
                             <tfoot className="bg-slate-100 font-bold border-t-2 border-slate-300">
                                 <tr>
                                     <td className="p-3" colSpan={2}>TOTAIS</td>
-                                    <td className="p-3 text-right text-slate-800">{formatCurrency((calculo.rescisaoLiquida + calculo.descontoINSS + ajustes.filter((a: any) => a.tipo === 'Desconto').reduce((acc: number, c: any) => acc + c.valor, 0)))}</td>
-                                    <td className="p-3 text-right text-red-600">{formatCurrency(calculo.descontoINSS + ajustes.filter((a: any) => a.tipo === 'Desconto').reduce((acc: number, c: any) => acc + c.valor, 0))}</td>
+                                    <td className="p-3 text-right text-slate-800">{formatCurrency((calculo.rescisaoLiquida + calculo.descontoINSS + calculo.valorAvisoDesconto + ajustes.filter((a: any) => a.tipo === 'Desconto').reduce((acc: number, c: any) => acc + c.valor, 0)))}</td>
+                                    <td className="p-3 text-right text-red-600">{formatCurrency(calculo.descontoINSS + calculo.valorAvisoDesconto + ajustes.filter((a: any) => a.tipo === 'Desconto').reduce((acc: number, c: any) => acc + c.valor, 0))}</td>
                                 </tr>
                             </tfoot>
                         </table>
 
-                        {/* Resumo FGTS */}
+                        {/* Resumo FGTS - Ocultar ou Mostrar zerado se for pedido de demissão */}
+                        {!calculo.isPedidoDemissao && (
                         <div className="mb-6 p-4 bg-slate-50 border border-slate-200 rounded text-xs">
                             <h3 className="font-bold text-slate-700 uppercase mb-2 border-b border-slate-200 pb-1">Demonstrativo FGTS</h3>
                             <div className="grid grid-cols-2 gap-x-8 gap-y-1">
@@ -758,10 +881,10 @@ function App() {
                                 <div className="flex justify-between border-t border-slate-200 pt-1 mt-1 font-bold text-slate-800 col-span-2"><span>Total FGTS a Depositar:</span> <span className="font-mono text-sm">{formatCurrency(calculo.totalContaFGTS)}</span></div>
                             </div>
                         </div>
+                        )}
 
                         {/* TOTAL GERAL BOX */}
                         <div className="mb-8">
-                            {/* ADIÇÃO: Linha de Rescisão Líquida */}
                             <div className="flex justify-end items-center mb-2 px-4 gap-4">
                                 <span className="text-sm font-bold text-slate-500 uppercase">Rescisão Líquida a Receber</span>
                                 <span className="text-lg font-mono font-bold text-slate-700">{formatCurrency(calculo.rescisaoLiquida)}</span>
@@ -770,7 +893,7 @@ function App() {
                             <div className="border-2 border-slate-800 p-4 flex justify-between items-center bg-slate-50">
                                 <div>
                                     <div className="text-xs font-bold uppercase text-slate-500">Total Geral a Receber</div>
-                                    <div className="text-[10px] text-slate-400">Rescisão Líquida + Total FGTS</div>
+                                    <div className="text-[10px] text-slate-400">Rescisão Líquida {calculo.isPedidoDemissao ? '' : '+ Total FGTS'}</div>
                                 </div>
                                 <div className="text-3xl font-bold text-slate-900 font-mono">{formatCurrency(calculo.totalGeral)}</div>
                             </div>
