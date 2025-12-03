@@ -225,7 +225,9 @@ const App = () => {
   const [isFgtsModalOpen, setIsFgtsModalOpen] = useState(false);
   const [fgtsSalaries, setFgtsSalaries] = useState<Record<string, number>>({});
   const [fgtsMonths, setFgtsMonths] = useState<string[]>([]);
-  const [fgtsManualBalance, setFgtsManualBalance] = useState<string>(''); // Novo estado para saldo manual
+  const [fgtsManualBalance, setFgtsManualBalance] = useState<string>('');
+  
+  const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
 
   const resultsRef = useRef<HTMLDivElement>(null);
 
@@ -283,65 +285,80 @@ const App = () => {
         projecaoData.setDate(projecaoData.getDate() + diasIndenizadosNoTrabalhado);
     }
 
-    // 3. 13º Salário - Lógica Rigorosa de 15 Dias
-    const calcularAvos13 = (inicio: Date, fim: Date) => {
+    // Função Auxiliar para contar avos considerando 15 dias no mês
+    const calcularAvosMesAMes = (inicio: Date, fim: Date) => {
         let avos = 0;
-        // Ajusta o início para o primeiro dia do ano da admissão ou data de admissão
         let dataIteracao = new Date(inicio.getFullYear(), 0, 1);
         if (dataIteracao < inicio) dataIteracao = new Date(inicio);
 
-        // Percorre mês a mês até a data fim
         while (dataIteracao <= fim) {
-            // Verifica se está no mesmo ano
             if (dataIteracao.getFullYear() === fim.getFullYear() || dataIteracao.getFullYear() === inicio.getFullYear()) {
                 const anoAtual = dataIteracao.getFullYear();
                 const mesAtual = dataIteracao.getMonth();
 
-                // Define o último dia a ser considerado neste mês
                 let ultimoDiaDoMes = new Date(anoAtual, mesAtual + 1, 0).getDate();
                 let diaInicioContagem = 1;
                 let diaFimContagem = ultimoDiaDoMes;
 
-                // Se for o mês de início (admissão), começa do dia da admissão
                 if (anoAtual === inicio.getFullYear() && mesAtual === inicio.getMonth()) {
                     diaInicioContagem = inicio.getDate();
                 }
 
-                // Se for o mês final (demissão/projeção), termina no dia da demissão
                 if (anoAtual === fim.getFullYear() && mesAtual === fim.getMonth()) {
                     diaFimContagem = fim.getDate();
                 }
 
-                // Calcula dias trabalhados no mês
                 const diasTrabalhados = diaFimContagem - diaInicioContagem + 1;
 
-                // Só conta o avo se trabalhou 15 dias ou mais
                 if (diasTrabalhados >= 15) {
                     avos++;
                 }
             }
-            // Avança para o dia 1 do próximo mês
             dataIteracao = new Date(dataIteracao.getFullYear(), dataIteracao.getMonth() + 1, 1);
         }
         return Math.min(avos, 12);
     };
 
-    // Para 13º, usamos sempre 1º de Janeiro do ano da demissão como base, a não ser que admissão seja neste ano
+    // 3. 13º Salário
     const inicioAnoDemissao = new Date(dtDemissao.getFullYear(), 0, 1);
     const dataInicio13 = dtAdmissao > inicioAnoDemissao ? dtAdmissao : inicioAnoDemissao;
 
-    let avos13 = calcularAvos13(dataInicio13, dtDemissao);
+    let avos13 = calcularAvosMesAMes(dataInicio13, dtDemissao);
     let avos13Indenizado = 0;
     
     if (tipoAviso === 'indenizado') {
-        const totalAvosComProjecao = calcularAvos13(dataInicio13, projecaoData);
+        const totalAvosComProjecao = calcularAvosMesAMes(dataInicio13, projecaoData);
         avos13Indenizado = Math.max(0, totalAvosComProjecao - avos13);
     }
     
     const val13Proporcional = (salarioTotal / 12) * avos13;
     const val13Indenizado = (salarioTotal / 12) * avos13Indenizado;
 
-    // 4. Férias - Lógica de Período Aquisitivo + 15 Dias
+    // 4. Férias - Função Auxiliar para contar avos de férias
+    const calcularAvosFeriasPeriodo = (fim: Date, inicioPeriodo: Date) => {
+        let avos = 0;
+        let dataIteracao = new Date(inicioPeriodo);
+        
+        while (dataIteracao < fim) {
+            let fimMesAniversario = new Date(dataIteracao);
+            fimMesAniversario.setMonth(fimMesAniversario.getMonth() + 1);
+            
+            // Verifica o mês incompleto ou fragmentado
+            if (fimMesAniversario > fim) {
+                const diasNoFragmento = diffDays(fim, dataIteracao) + 1;
+                // A regra padrão para fração de férias é > 14 dias
+                if (diasNoFragmento >= 15) {
+                    avos++;
+                }
+            } else {
+                avos++;
+            }
+            
+            dataIteracao.setMonth(dataIteracao.getMonth() + 1);
+        }
+        return Math.min(avos, 12);
+    };
+
     const valFeriasVencidas = feriasVencidas * salarioTotal;
     const valTercoFeriasVencidas = valFeriasVencidas / 3;
 
@@ -351,65 +368,13 @@ const App = () => {
       inicioPeriodoAquisitivo.setFullYear(inicioPeriodoAquisitivo.getFullYear() + 1);
     }
 
-    // Calcular avos proporcionais baseados no período aquisitivo
-    let avosFerias = 0;
-    let dataIteracaoFerias = new Date(inicioPeriodoAquisitivo);
-    
-    // Itera mês a mês do período aquisitivo até a demissão
-    while (dataIteracaoFerias < dtDemissao) {
-        // Define o fim deste mês de "aniversário"
-        let fimMesAniversario = new Date(dataIteracaoFerias);
-        fimMesAniversario.setMonth(fimMesAniversario.getMonth() + 1);
-        
-        // Se o mês completo termina depois da demissão, é o mês incompleto
-        if (fimMesAniversario > dtDemissao) {
-            // Verifica dias trabalhados nesse fragmento
-            const diasNoFragmento = diffDays(dtDemissao, dataIteracaoFerias) + 1; // +1 inclusive
-            if (diasNoFragmento >= 15) {
-                avosFerias++;
-            }
-        } else {
-            // Mês completo trabalhado
-            avosFerias++;
-        }
-        
-        dataIteracaoFerias.setMonth(dataIteracaoFerias.getMonth() + 1);
-    }
-    avosFerias = Math.min(avosFerias, 12);
-
+    let avosFerias = calcularAvosFeriasPeriodo(dtDemissao, inicioPeriodoAquisitivo);
     let avosFeriasIndenizadas = 0;
+
     if (tipoAviso === 'indenizado') {
-        // Projeção do aviso nas férias
-        const fimComAviso = new Date(dtDemissao);
-        fimComAviso.setDate(fimComAviso.getDate() + diasAvisoLei);
-        
-        // Recalcula avos totais com a projeção
-        let avosTotais = 0;
-        let dataIteracaoProj = new Date(inicioPeriodoAquisitivo);
-        while (dataIteracaoProj < fimComAviso) {
-            let fimMesAniversario = new Date(dataIteracaoProj);
-            fimMesAniversario.setMonth(fimMesAniversario.getMonth() + 1);
-            if (fimMesAniversario > fimComAviso) {
-                const diasNoFragmento = diffDays(fimComAviso, dataIteracaoProj); // Ajuste fino sem +1 as vezes para projeção segura
-                 // Para projeção, a regra de 15 dias se aplica ao saldo de dias gerado pelo aviso
-                 // Simplificação segura: (diasAviso / 30)
-                 // Vamos usar a lógica padrão:
-                 if ((diasAvisoLei % 30) + (dtDemissao.getDate() - inicioPeriodoAquisitivo.getDate()) >= 15) {
-                     // Lógica complexa de datas quebradas. 
-                     // Simplificando pela lei: a cada 30 dias de aviso = 1 avo. 
-                     // Se sobrar > 14 dias = 1 avo.
-                 }
-            } else {
-                avosTotais++;
-            }
-            dataIteracaoProj.setMonth(dataIteracaoProj.getMonth() + 1);
-        }
-        
-        // Simplificação robusta para Férias sobre Aviso Indenizado:
-        // A projeção conta como tempo de serviço. Calculamos a diferença de avos.
-        // A implementação anterior estava correta para a maioria dos casos, vamos manter a lógica de dias do aviso
-        avosFeriasIndenizadas = Math.floor(diasAvisoLei / 30);
-        if ((diasAvisoLei % 30) >= 15) avosFeriasIndenizadas++;
+        // Calcula avos totais considerando a data projetada
+        const avosFeriasComProjecao = calcularAvosFeriasPeriodo(projecaoData, inicioPeriodoAquisitivo);
+        avosFeriasIndenizadas = Math.max(0, avosFeriasComProjecao - avosFerias);
     }
 
     const valFeriasProporcionais = (salarioTotal / 12) * avosFerias;
@@ -462,6 +427,14 @@ const App = () => {
     });
   };
 
+  const handleOpenPrintModal = () => {
+      if (!resultado) {
+          alert('Realize o cálculo antes de imprimir.');
+          return;
+      }
+      setIsPrintModalOpen(true);
+  };
+  
   const handlePrint = () => {
     window.print();
   };
@@ -612,7 +585,7 @@ const App = () => {
 
   return (
     <div className="min-h-screen p-4 md:p-8 max-w-7xl mx-auto w-full font-sans text-slate-600">
-      <header className="mb-10 flex flex-col md:flex-row justify-between items-center gap-6 animate-fade-in">
+      <header className="mb-10 flex flex-col md:flex-row justify-between items-center gap-6 animate-fade-in no-print">
         <div className="flex items-center gap-4">
           <div className="w-14 h-14 bg-gradient-to-br from-indigo-600 to-indigo-700 rounded-2xl flex items-center justify-center shadow-lg shadow-indigo-200 ring-4 ring-indigo-50">
             <span className="material-icons-round text-white text-3xl">calculate</span>
@@ -623,7 +596,7 @@ const App = () => {
           </div>
         </div>
         <button 
-          onClick={handlePrint}
+          onClick={handleOpenPrintModal}
           className="group flex items-center gap-2 px-5 py-2.5 bg-white border border-slate-200 text-slate-600 rounded-xl hover:bg-slate-50 hover:border-indigo-200 hover:text-indigo-600 transition-all shadow-sm font-semibold active:scale-95"
         >
           <span className="material-icons-round text-xl group-hover:scale-110 transition-transform">print</span>
@@ -720,9 +693,9 @@ const App = () => {
           ) : (
             <>
               {/* Cards de Resumo */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-5 no-print">
                 
-                {/* 1. Rescisão Líquida (Antigo Destaque, agora simples) */}
+                {/* 1. Rescisão Líquida */}
                 <div className="bg-white border border-slate-100 rounded-2xl p-6 shadow-sm hover:shadow-md transition-all hover:-translate-y-1 animate-fade-in">
                   <div className="text-slate-500 text-sm font-bold mb-2 uppercase tracking-wide">Rescisão Líquida</div>
                   <div className="text-2xl lg:text-3xl font-bold text-slate-800 tracking-tight mb-1">{formatCurrency(resultado.liquido)}</div>
@@ -748,7 +721,7 @@ const App = () => {
                   </div>
                 </div>
 
-                {/* 3. Total Geral (Antigo Custo, agora com destaque) */}
+                {/* 3. Total Geral */}
                 <div className="relative overflow-hidden bg-gradient-to-br from-indigo-600 to-indigo-800 rounded-2xl p-6 text-white shadow-xl shadow-indigo-200 transform transition-all hover:-translate-y-1 hover:shadow-2xl animate-fade-in delay-200">
                   <div className="absolute top-0 right-0 p-4 opacity-10">
                      <span className="material-icons-round text-8xl">account_balance_wallet</span>
@@ -763,6 +736,7 @@ const App = () => {
 
               {/* Detalhamento */}
               <Card 
+                className="no-print"
                 title="Detalhamento das Verbas" 
                 icon="receipt_long" 
                 delay="delay-300"
@@ -811,7 +785,7 @@ const App = () => {
                       />
                       {resultado.val13Indenizado > 0 && (
                         <ResultRow 
-                          label="13º Salário Indenizado" 
+                          label="13º Salário s/ Aviso Prévio Indenizado" 
                           subtext="Sobre Aviso Prévio"
                           value={resultado.val13Indenizado} 
                         />
@@ -853,12 +827,12 @@ const App = () => {
                       {(resultado.valFeriasIndenizadas > 0) && (
                         <>
                           <ResultRow 
-                            label="Férias Indenizadas" 
+                            label="Férias s/ Aviso Prévio Indenizado" 
                             subtext="Sobre Aviso Prévio"
                             value={resultado.valFeriasIndenizadas} 
                           />
                           <ResultRow 
-                            label="1/3 s/ Férias Indenizadas" 
+                            label="1/3 s/ Férias s/ Aviso Prévio Indenizado" 
                             value={resultado.valTercoFeriasIndenizadas} 
                           />
                         </>
@@ -881,28 +855,183 @@ const App = () => {
                       />
                     </div>
                   </div>
-
-                   <div className="print-only mt-12 pt-8 border-t-2 border-slate-300">
-                      <div className="flex justify-between items-end gap-10">
-                          <div className="text-center flex-1 border-t border-slate-800 pt-2 font-medium">
-                              Assinatura do Funcionário
-                          </div>
-                          <div className="text-center flex-1 border-t border-slate-800 pt-2 font-medium">
-                              Assinatura do Empregador
-                          </div>
-                      </div>
-                      <p className="text-xs text-slate-400 mt-6 text-center">Documento gerado automaticamente em {new Date().toLocaleDateString()} às {new Date().toLocaleTimeString()}</p>
-                  </div>
                 </div>
               </Card>
             </>
           )}
         </div>
       </div>
+      
+      {/* MODAL DE IMPRESSÃO - RELATÓRIO */}
+      {isPrintModalOpen && resultado && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-0 md:p-4 bg-slate-900/80 backdrop-blur-sm animate-fade-in overflow-y-auto">
+              <div className="bg-white md:rounded-2xl shadow-2xl w-full max-w-4xl min-h-screen md:min-h-0 md:h-auto animate-slide-up flex flex-col relative print:shadow-none print:w-full print:max-w-none print:h-full print:rounded-none">
+                  <div className="no-print p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50 md:rounded-t-2xl sticky top-0 z-10">
+                       <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+                           <span className="material-icons-round text-indigo-600">print</span>
+                           Visualização de Impressão
+                       </h2>
+                       <div className="flex gap-2">
+                           <button onClick={() => setIsPrintModalOpen(false)} className="px-4 py-2 text-slate-600 font-medium hover:bg-slate-200 rounded-lg transition-colors">Fechar</button>
+                           <button onClick={handlePrint} className="px-4 py-2 bg-indigo-600 text-white font-bold rounded-lg hover:bg-indigo-700 transition-colors shadow-lg shadow-indigo-100 flex items-center gap-2">
+                               <span className="material-icons-round text-sm">print</span> Imprimir
+                           </button>
+                       </div>
+                  </div>
+
+                  {/* CONTEÚDO IMPRESSO */}
+                  <div className="p-8 md:p-12 print-content">
+                      <div className="text-center mb-8 border-b-2 border-slate-800 pb-6">
+                          <h1 className="text-2xl font-bold uppercase text-slate-900 mb-2">Termo de Rescisão de Contrato de Trabalho</h1>
+                          <p className="text-slate-500 text-sm">Demonstrativo de Cálculo Rescisório</p>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-x-8 gap-y-4 mb-8 text-sm">
+                          <div className="flex flex-col"><span className="font-bold text-slate-400 text-xs uppercase">Data de Admissão</span> <span className="text-slate-800 font-mono">{parseDate(formData.dataAdmissao).toLocaleDateString()}</span></div>
+                          <div className="flex flex-col"><span className="font-bold text-slate-400 text-xs uppercase">Data de Demissão</span> <span className="text-slate-800 font-mono">{parseDate(formData.dataDemissao).toLocaleDateString()}</span></div>
+                          <div className="flex flex-col"><span className="font-bold text-slate-400 text-xs uppercase">Tipo de Aviso</span> <span className="text-slate-800 font-mono uppercase">{formData.tipoAviso}</span></div>
+                          <div className="flex flex-col"><span className="font-bold text-slate-400 text-xs uppercase">Data da Projeção</span> <span className="text-slate-800 font-mono">{resultado.dataProjecao}</span></div>
+                          <div className="flex flex-col"><span className="font-bold text-slate-400 text-xs uppercase">Maior Remuneração</span> <span className="text-slate-800 font-mono">{formatCurrency(formData.salarioBase + formData.adicionalInsalubridade)}</span></div>
+                      </div>
+
+                      <div className="border border-slate-200 rounded-lg overflow-hidden mb-8">
+                          <table className="w-full text-sm text-left">
+                              <thead className="bg-slate-100 text-slate-700 font-bold uppercase text-xs">
+                                  <tr>
+                                      <th className="px-4 py-3">Rubrica</th>
+                                      <th className="px-4 py-3 text-right">Referência</th>
+                                      <th className="px-4 py-3 text-right">Proventos</th>
+                                      <th className="px-4 py-3 text-right">Descontos</th>
+                                  </tr>
+                              </thead>
+                              <tbody className="divide-y divide-slate-100">
+                                  <tr>
+                                      <td className="px-4 py-2">Saldo de Salário</td>
+                                      <td className="px-4 py-2 text-right text-slate-500">{resultado.diasTrabalhadosMes} dias</td>
+                                      <td className="px-4 py-2 text-right font-mono text-slate-700">{formatCurrency(resultado.valSaldoSalario)}</td>
+                                      <td className="px-4 py-2 text-right font-mono text-slate-700"></td>
+                                  </tr>
+                                  <tr>
+                                      <td className="px-4 py-2">Aviso Prévio</td>
+                                      <td className="px-4 py-2 text-right text-slate-500">{resultado.diasAviso} dias</td>
+                                      <td className="px-4 py-2 text-right font-mono text-slate-700">{formatCurrency(resultado.valAviso)}</td>
+                                      <td className="px-4 py-2 text-right font-mono text-slate-700"></td>
+                                  </tr>
+                                  <tr>
+                                      <td className="px-4 py-2">13º Salário Proporcional</td>
+                                      <td className="px-4 py-2 text-right text-slate-500">{resultado.avos13}/12 avos</td>
+                                      <td className="px-4 py-2 text-right font-mono text-slate-700">{formatCurrency(resultado.val13Proporcional)}</td>
+                                      <td className="px-4 py-2 text-right font-mono text-slate-700"></td>
+                                  </tr>
+                                  {resultado.val13Indenizado > 0 && (
+                                  <tr>
+                                      <td className="px-4 py-2">13º Salário s/ Aviso Prévio Indenizado</td>
+                                      <td className="px-4 py-2 text-right text-slate-500">-</td>
+                                      <td className="px-4 py-2 text-right font-mono text-slate-700">{formatCurrency(resultado.val13Indenizado)}</td>
+                                      <td className="px-4 py-2 text-right font-mono text-slate-700"></td>
+                                  </tr>
+                                  )}
+                                  <tr>
+                                      <td className="px-4 py-2">Férias Vencidas</td>
+                                      <td className="px-4 py-2 text-right text-slate-500">{formData.feriasVencidas > 0 ? formData.feriasVencidas : '-'}</td>
+                                      <td className="px-4 py-2 text-right font-mono text-slate-700">{formatCurrency(resultado.valFeriasVencidas)}</td>
+                                      <td className="px-4 py-2 text-right font-mono text-slate-700"></td>
+                                  </tr>
+                                  <tr>
+                                      <td className="px-4 py-2">1/3 s/ Férias Vencidas</td>
+                                      <td className="px-4 py-2 text-right text-slate-500">-</td>
+                                      <td className="px-4 py-2 text-right font-mono text-slate-700">{formatCurrency(resultado.valTercoFeriasVencidas)}</td>
+                                      <td className="px-4 py-2 text-right font-mono text-slate-700"></td>
+                                  </tr>
+                                  <tr>
+                                      <td className="px-4 py-2">Férias Proporcionais</td>
+                                      <td className="px-4 py-2 text-right text-slate-500">{resultado.avosFerias}/12 avos</td>
+                                      <td className="px-4 py-2 text-right font-mono text-slate-700">{formatCurrency(resultado.valFeriasProporcionais)}</td>
+                                      <td className="px-4 py-2 text-right font-mono text-slate-700"></td>
+                                  </tr>
+                                  <tr>
+                                      <td className="px-4 py-2">1/3 s/ Férias Proporcionais</td>
+                                      <td className="px-4 py-2 text-right text-slate-500">-</td>
+                                      <td className="px-4 py-2 text-right font-mono text-slate-700">{formatCurrency(resultado.valTercoFeriasProp)}</td>
+                                      <td className="px-4 py-2 text-right font-mono text-slate-700"></td>
+                                  </tr>
+                                  {resultado.valFeriasIndenizadas > 0 && (
+                                  <>
+                                      <tr>
+                                          <td className="px-4 py-2">Férias s/ Aviso Prévio Indenizado</td>
+                                          <td className="px-4 py-2 text-right text-slate-500">-</td>
+                                          <td className="px-4 py-2 text-right font-mono text-slate-700">{formatCurrency(resultado.valFeriasIndenizadas)}</td>
+                                          <td className="px-4 py-2 text-right font-mono text-slate-700"></td>
+                                      </tr>
+                                      <tr>
+                                          <td className="px-4 py-2">1/3 s/ Férias s/ Aviso Prévio Indenizado</td>
+                                          <td className="px-4 py-2 text-right text-slate-500">-</td>
+                                          <td className="px-4 py-2 text-right font-mono text-slate-700">{formatCurrency(resultado.valTercoFeriasIndenizadas)}</td>
+                                          <td className="px-4 py-2 text-right font-mono text-slate-700"></td>
+                                      </tr>
+                                  </>
+                                  )}
+                                  <tr>
+                                      <td className="px-4 py-2 text-red-600">INSS s/ Salários e 13º</td>
+                                      <td className="px-4 py-2 text-right text-slate-500">-</td>
+                                      <td className="px-4 py-2 text-right font-mono text-slate-700"></td>
+                                      <td className="px-4 py-2 text-right font-mono text-red-600">{formatCurrency(resultado.valINSS)}</td>
+                                  </tr>
+                                  <tr className="bg-slate-50 font-bold border-t border-slate-200">
+                                      <td className="px-4 py-3">TOTAIS</td>
+                                      <td className="px-4 py-3"></td>
+                                      <td className="px-4 py-3 text-right text-slate-800">{formatCurrency(resultado.liquido + resultado.valINSS)}</td>
+                                      <td className="px-4 py-3 text-right text-red-600">{formatCurrency(resultado.valINSS)}</td>
+                                  </tr>
+                              </tbody>
+                          </table>
+                      </div>
+
+                      <div className="flex justify-end mb-12">
+                           <div className="bg-slate-100 px-6 py-4 rounded-lg text-right">
+                               <span className="block text-xs font-bold text-slate-500 uppercase">Líquido a Receber</span>
+                               <span className="block text-3xl font-bold text-slate-900">{formatCurrency(resultado.liquido)}</span>
+                           </div>
+                      </div>
+
+                       <div className="border border-dashed border-orange-200 bg-orange-50 rounded-lg p-4 mb-12">
+                          <h3 className="font-bold text-orange-800 mb-2 text-sm uppercase">Demonstrativo de FGTS</h3>
+                          <div className="flex justify-between text-sm">
+                              <span>Depósito Rescisório + Saldo Anterior:</span>
+                              <span className="font-mono font-bold">{formatCurrency(resultado.fgts.saldoEstimado)}</span>
+                          </div>
+                          <div className="flex justify-between text-sm">
+                              <span>Multa Rescisória (40%):</span>
+                              <span className="font-mono font-bold">{formatCurrency(resultado.fgts.multa)}</span>
+                          </div>
+                          <div className="flex justify-between text-sm border-t border-orange-200 mt-2 pt-2">
+                              <span className="font-bold">Total FGTS:</span>
+                              <span className="font-mono font-bold text-orange-700">{formatCurrency(resultado.fgts.total)}</span>
+                          </div>
+                      </div>
+
+                      <div className="flex justify-between items-end gap-16 mt-20">
+                          <div className="text-center flex-1 border-t border-slate-800 pt-2 text-sm">
+                              Assinatura do Funcionário
+                          </div>
+                          <div className="text-center flex-1 border-t border-slate-800 pt-2 text-sm">
+                              Assinatura do Empregador
+                          </div>
+                      </div>
+
+                      <div className="mt-16 pt-8 border-t-4 border-indigo-600">
+                          <p className="font-bold text-slate-900 text-lg">Lucas Araujo dos Santos</p>
+                          <p className="text-slate-600">Contador</p>
+                          <p className="text-slate-500 text-sm font-mono mt-1">CRC-BA: 046968/O-6</p>
+                      </div>
+                  </div>
+              </div>
+          </div>
+      )}
 
       {/* MODAL DE EDIÇÃO DE PROVENTOS E TOTAIS */}
       {isEditModalOpen && editValues && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-fade-in">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-fade-in no-print">
             <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto animate-slide-up">
                 <div className="sticky top-0 bg-white border-b border-slate-100 p-6 flex justify-between items-center z-10">
                     <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2">
@@ -953,11 +1082,13 @@ const App = () => {
                             <FormInput label="Saldo de Salário" currency type="number" name="valSaldoSalario" value={editValues.valSaldoSalario} onChange={handleEditChange} />
                             <FormInput label="Aviso Prévio" currency type="number" name="valAviso" value={editValues.valAviso} onChange={handleEditChange} />
                             <FormInput label="13º Proporcional" currency type="number" name="val13Proporcional" value={editValues.val13Proporcional} onChange={handleEditChange} />
-                            <FormInput label="13º Indenizado" currency type="number" name="val13Indenizado" value={editValues.val13Indenizado} onChange={handleEditChange} />
+                            <FormInput label="13º Salário s/ Aviso Prévio Indenizado" currency type="number" name="val13Indenizado" value={editValues.val13Indenizado} onChange={handleEditChange} />
                             <FormInput label="Férias Vencidas" currency type="number" name="valFeriasVencidas" value={editValues.valFeriasVencidas} onChange={handleEditChange} />
                             <FormInput label="1/3 Férias Vencidas" currency type="number" name="valTercoFeriasVencidas" value={editValues.valTercoFeriasVencidas} onChange={handleEditChange} />
                             <FormInput label="Férias Proporcionais" currency type="number" name="valFeriasProporcionais" value={editValues.valFeriasProporcionais} onChange={handleEditChange} />
                             <FormInput label="1/3 Férias Prop." currency type="number" name="valTercoFeriasProp" value={editValues.valTercoFeriasProp} onChange={handleEditChange} />
+                            <FormInput label="Férias s/ Aviso Prévio Indenizado" currency type="number" name="valFeriasIndenizadas" value={editValues.valFeriasIndenizadas} onChange={handleEditChange} />
+                            <FormInput label="1/3 s/ Férias s/ Aviso Indenizado" currency type="number" name="valTercoFeriasIndenizadas" value={editValues.valTercoFeriasIndenizadas} onChange={handleEditChange} />
                          </div>
                     </div>
                     
@@ -989,7 +1120,7 @@ const App = () => {
 
       {/* MODAL DETALHADO DE FGTS */}
       {isFgtsModalOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-fade-in">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-fade-in no-print">
               <div className="bg-white rounded-2xl shadow-2xl w-full max-w-xl max-h-[90vh] flex flex-col animate-slide-up">
                   <div className="p-6 border-b border-slate-100 flex justify-between items-start bg-slate-50 rounded-t-2xl">
                       <div>

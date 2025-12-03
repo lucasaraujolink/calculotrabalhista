@@ -9,10 +9,9 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
   
-  <!-- Carregando Tailwind CSS para estilização rápida e moderna -->
+  <!-- Tailwind via CDN mantido para simplificar a configuração de estilos -->
   <script src="https://cdn.tailwindcss.com"></script>
   
-  <!-- Configurações adicionais do Tailwind e Estilos Customizados -->
   <script>
     tailwind.config = {
       theme: {
@@ -49,13 +48,11 @@
   </script>
 
   <style>
-    /* Estilos globais para suavidade */
     body {
       background-color: #F8FAFC;
       -webkit-font-smoothing: antialiased;
     }
 
-    /* Utilitários de Impressão */
     @media print {
       body {
         background-color: white;
@@ -66,7 +63,6 @@
       .print-only {
         display: block !important;
       }
-      /* Remove sombras e ajusta layout para papel */
       .shadow-sm, .shadow-md, .shadow-lg, .shadow-xl {
         box-shadow: none !important;
       }
@@ -79,7 +75,6 @@
       display: none;
     }
 
-    /* Scrollbar elegante */
     ::-webkit-scrollbar {
       width: 8px;
     }
@@ -94,7 +89,6 @@
       background: #94A3B8;
     }
 
-    /* Classes auxiliares para delays de animação */
     .delay-100 { animation-delay: 100ms; }
     .delay-200 { animation-delay: 200ms; }
     .delay-300 { animation-delay: 300ms; }
@@ -104,13 +98,15 @@
   "imports": {
     "react/": "https://aistudiocdn.com/react@^19.2.0/",
     "react": "https://aistudiocdn.com/react@^19.2.0",
-    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/"
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
+    "vite": "https://aistudiocdn.com/vite@^7.2.6",
+    "@vitejs/plugin-react": "https://aistudiocdn.com/@vitejs/plugin-react@^5.1.1"
   }
 }
 </script>
 </head>
 <body>
   <div id="root"></div>
-  <script type="module" src="./index.tsx"></script>
+  <script type="module" src="/index.tsx"></script>
 </body>
 </html>
