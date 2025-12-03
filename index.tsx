@@ -880,149 +880,186 @@ const App = () => {
                   </div>
 
                   {/* CONTEÚDO IMPRESSO */}
-                  <div className="p-8 md:p-12 print-content">
-                      <div className="text-center mb-8 border-b-2 border-slate-800 pb-6">
-                          <h1 className="text-2xl font-bold uppercase text-slate-900 mb-2">Termo de Rescisão de Contrato de Trabalho</h1>
-                          <p className="text-slate-500 text-sm">Demonstrativo de Cálculo Rescisório</p>
+                  <div className="p-8 md:p-12 print-content text-slate-800">
+                      
+                      {/* CABEÇALHO DO DOCUMENTO */}
+                      <div className="flex justify-between items-end border-b-2 border-slate-900 pb-4 mb-8">
+                          <div>
+                              <h1 className="text-2xl font-bold uppercase tracking-tight text-slate-900">Demonstrativo de Valores</h1>
+                              <p className="text-sm text-slate-500 mt-1 uppercase tracking-wide">Cálculo Rescisório Trabalhista</p>
+                          </div>
+                          <div className="text-right">
+                              <div className="text-xs text-slate-400 uppercase font-bold mb-1">Data do Cálculo</div>
+                              <div className="font-mono text-sm">{new Date().toLocaleDateString('pt-BR')}</div>
+                          </div>
                       </div>
 
-                      <div className="grid grid-cols-2 gap-x-8 gap-y-4 mb-8 text-sm">
-                          <div className="flex flex-col"><span className="font-bold text-slate-400 text-xs uppercase">Data de Admissão</span> <span className="text-slate-800 font-mono">{parseDate(formData.dataAdmissao).toLocaleDateString()}</span></div>
-                          <div className="flex flex-col"><span className="font-bold text-slate-400 text-xs uppercase">Data de Demissão</span> <span className="text-slate-800 font-mono">{parseDate(formData.dataDemissao).toLocaleDateString()}</span></div>
-                          <div className="flex flex-col"><span className="font-bold text-slate-400 text-xs uppercase">Tipo de Aviso</span> <span className="text-slate-800 font-mono uppercase">{formData.tipoAviso}</span></div>
-                          <div className="flex flex-col"><span className="font-bold text-slate-400 text-xs uppercase">Data da Projeção</span> <span className="text-slate-800 font-mono">{resultado.dataProjecao}</span></div>
-                          <div className="flex flex-col"><span className="font-bold text-slate-400 text-xs uppercase">Maior Remuneração</span> <span className="text-slate-800 font-mono">{formatCurrency(formData.salarioBase + formData.adicionalInsalubridade)}</span></div>
+                      {/* GRID DE INFORMAÇÕES */}
+                      <div className="bg-slate-50 rounded-lg p-4 border border-slate-200 mb-8 print:bg-transparent print:border-slate-300">
+                          <div className="grid grid-cols-2 md:grid-cols-4 gap-y-4 gap-x-6">
+                            <div className="flex flex-col">
+                                <span className="text-[10px] uppercase font-bold text-slate-400 mb-1">Data de Admissão</span>
+                                <span className="font-mono font-medium">{parseDate(formData.dataAdmissao).toLocaleDateString()}</span>
+                            </div>
+                            <div className="flex flex-col">
+                                <span className="text-[10px] uppercase font-bold text-slate-400 mb-1">Data de Demissão</span>
+                                <span className="font-mono font-medium">{parseDate(formData.dataDemissao).toLocaleDateString()}</span>
+                            </div>
+                            <div className="flex flex-col">
+                                <span className="text-[10px] uppercase font-bold text-slate-400 mb-1">Tipo de Aviso</span>
+                                <span className="font-mono font-medium uppercase">{formData.tipoAviso}</span>
+                            </div>
+                            <div className="flex flex-col">
+                                <span className="text-[10px] uppercase font-bold text-slate-400 mb-1">Projeção Aviso</span>
+                                <span className="font-mono font-medium">{resultado.dataProjecao}</span>
+                            </div>
+                            <div className="flex flex-col col-span-2">
+                                <span className="text-[10px] uppercase font-bold text-slate-400 mb-1">Maior Remuneração</span>
+                                <span className="font-mono font-medium">{formatCurrency(formData.salarioBase + formData.adicionalInsalubridade)}</span>
+                            </div>
+                          </div>
                       </div>
 
-                      <div className="border border-slate-200 rounded-lg overflow-hidden mb-8">
-                          <table className="w-full text-sm text-left">
-                              <thead className="bg-slate-100 text-slate-700 font-bold uppercase text-xs">
+                      {/* TABELA DE VALORES */}
+                      <div className="mb-8">
+                          <table className="w-full text-sm border-collapse">
+                              <thead className="bg-slate-100 text-slate-600 font-bold uppercase text-[10px] tracking-wider print:bg-slate-200">
                                   <tr>
-                                      <th className="px-4 py-3">Rubrica</th>
-                                      <th className="px-4 py-3 text-right">Referência</th>
-                                      <th className="px-4 py-3 text-right">Proventos</th>
-                                      <th className="px-4 py-3 text-right">Descontos</th>
+                                      <th className="px-3 py-2 text-left border-y border-slate-200">Rubrica</th>
+                                      <th className="px-3 py-2 text-right border-y border-slate-200">Ref.</th>
+                                      <th className="px-3 py-2 text-right border-y border-slate-200">Proventos</th>
+                                      <th className="px-3 py-2 text-right border-y border-slate-200">Descontos</th>
                                   </tr>
                               </thead>
                               <tbody className="divide-y divide-slate-100">
-                                  <tr>
-                                      <td className="px-4 py-2">Saldo de Salário</td>
-                                      <td className="px-4 py-2 text-right text-slate-500">{resultado.diasTrabalhadosMes} dias</td>
-                                      <td className="px-4 py-2 text-right font-mono text-slate-700">{formatCurrency(resultado.valSaldoSalario)}</td>
-                                      <td className="px-4 py-2 text-right font-mono text-slate-700"></td>
+                                  {/* PROVENTOS */}
+                                  <tr className="print:bg-transparent odd:bg-slate-50/50">
+                                      <td className="px-3 py-2">Saldo de Salário</td>
+                                      <td className="px-3 py-2 text-right text-slate-500 font-mono text-xs">{resultado.diasTrabalhadosMes}d</td>
+                                      <td className="px-3 py-2 text-right font-mono">{formatCurrency(resultado.valSaldoSalario)}</td>
+                                      <td className="px-3 py-2"></td>
                                   </tr>
-                                  <tr>
-                                      <td className="px-4 py-2">Aviso Prévio</td>
-                                      <td className="px-4 py-2 text-right text-slate-500">{resultado.diasAviso} dias</td>
-                                      <td className="px-4 py-2 text-right font-mono text-slate-700">{formatCurrency(resultado.valAviso)}</td>
-                                      <td className="px-4 py-2 text-right font-mono text-slate-700"></td>
+                                  <tr className="print:bg-transparent odd:bg-slate-50/50">
+                                      <td className="px-3 py-2">Aviso Prévio</td>
+                                      <td className="px-3 py-2 text-right text-slate-500 font-mono text-xs">{resultado.diasAviso}d</td>
+                                      <td className="px-3 py-2 text-right font-mono">{formatCurrency(resultado.valAviso)}</td>
+                                      <td className="px-3 py-2"></td>
                                   </tr>
-                                  <tr>
-                                      <td className="px-4 py-2">13º Salário Proporcional</td>
-                                      <td className="px-4 py-2 text-right text-slate-500">{resultado.avos13}/12 avos</td>
-                                      <td className="px-4 py-2 text-right font-mono text-slate-700">{formatCurrency(resultado.val13Proporcional)}</td>
-                                      <td className="px-4 py-2 text-right font-mono text-slate-700"></td>
+                                  <tr className="print:bg-transparent odd:bg-slate-50/50">
+                                      <td className="px-3 py-2">13º Salário Proporcional</td>
+                                      <td className="px-3 py-2 text-right text-slate-500 font-mono text-xs">{resultado.avos13}/12</td>
+                                      <td className="px-3 py-2 text-right font-mono">{formatCurrency(resultado.val13Proporcional)}</td>
+                                      <td className="px-3 py-2"></td>
                                   </tr>
                                   {resultado.val13Indenizado > 0 && (
-                                  <tr>
-                                      <td className="px-4 py-2">13º Salário s/ Aviso Prévio Indenizado</td>
-                                      <td className="px-4 py-2 text-right text-slate-500">-</td>
-                                      <td className="px-4 py-2 text-right font-mono text-slate-700">{formatCurrency(resultado.val13Indenizado)}</td>
-                                      <td className="px-4 py-2 text-right font-mono text-slate-700"></td>
+                                  <tr className="print:bg-transparent odd:bg-slate-50/50">
+                                      <td className="px-3 py-2">13º Salário s/ Aviso Prévio Indenizado</td>
+                                      <td className="px-3 py-2 text-right text-slate-500 font-mono text-xs">-</td>
+                                      <td className="px-3 py-2 text-right font-mono">{formatCurrency(resultado.val13Indenizado)}</td>
+                                      <td className="px-3 py-2"></td>
                                   </tr>
                                   )}
-                                  <tr>
-                                      <td className="px-4 py-2">Férias Vencidas</td>
-                                      <td className="px-4 py-2 text-right text-slate-500">{formData.feriasVencidas > 0 ? formData.feriasVencidas : '-'}</td>
-                                      <td className="px-4 py-2 text-right font-mono text-slate-700">{formatCurrency(resultado.valFeriasVencidas)}</td>
-                                      <td className="px-4 py-2 text-right font-mono text-slate-700"></td>
+                                  <tr className="print:bg-transparent odd:bg-slate-50/50">
+                                      <td className="px-3 py-2">Férias Vencidas</td>
+                                      <td className="px-3 py-2 text-right text-slate-500 font-mono text-xs">{formData.feriasVencidas > 0 ? formData.feriasVencidas : '-'}</td>
+                                      <td className="px-3 py-2 text-right font-mono">{formatCurrency(resultado.valFeriasVencidas)}</td>
+                                      <td className="px-3 py-2"></td>
                                   </tr>
-                                  <tr>
-                                      <td className="px-4 py-2">1/3 s/ Férias Vencidas</td>
-                                      <td className="px-4 py-2 text-right text-slate-500">-</td>
-                                      <td className="px-4 py-2 text-right font-mono text-slate-700">{formatCurrency(resultado.valTercoFeriasVencidas)}</td>
-                                      <td className="px-4 py-2 text-right font-mono text-slate-700"></td>
+                                  <tr className="print:bg-transparent odd:bg-slate-50/50">
+                                      <td className="px-3 py-2">1/3 s/ Férias Vencidas</td>
+                                      <td className="px-3 py-2 text-right text-slate-500 font-mono text-xs">-</td>
+                                      <td className="px-3 py-2 text-right font-mono">{formatCurrency(resultado.valTercoFeriasVencidas)}</td>
+                                      <td className="px-3 py-2"></td>
                                   </tr>
-                                  <tr>
-                                      <td className="px-4 py-2">Férias Proporcionais</td>
-                                      <td className="px-4 py-2 text-right text-slate-500">{resultado.avosFerias}/12 avos</td>
-                                      <td className="px-4 py-2 text-right font-mono text-slate-700">{formatCurrency(resultado.valFeriasProporcionais)}</td>
-                                      <td className="px-4 py-2 text-right font-mono text-slate-700"></td>
+                                  <tr className="print:bg-transparent odd:bg-slate-50/50">
+                                      <td className="px-3 py-2">Férias Proporcionais</td>
+                                      <td className="px-3 py-2 text-right text-slate-500 font-mono text-xs">{resultado.avosFerias}/12</td>
+                                      <td className="px-3 py-2 text-right font-mono">{formatCurrency(resultado.valFeriasProporcionais)}</td>
+                                      <td className="px-3 py-2"></td>
                                   </tr>
-                                  <tr>
-                                      <td className="px-4 py-2">1/3 s/ Férias Proporcionais</td>
-                                      <td className="px-4 py-2 text-right text-slate-500">-</td>
-                                      <td className="px-4 py-2 text-right font-mono text-slate-700">{formatCurrency(resultado.valTercoFeriasProp)}</td>
-                                      <td className="px-4 py-2 text-right font-mono text-slate-700"></td>
+                                  <tr className="print:bg-transparent odd:bg-slate-50/50">
+                                      <td className="px-3 py-2">1/3 s/ Férias Proporcionais</td>
+                                      <td className="px-3 py-2 text-right text-slate-500 font-mono text-xs">-</td>
+                                      <td className="px-3 py-2 text-right font-mono">{formatCurrency(resultado.valTercoFeriasProp)}</td>
+                                      <td className="px-3 py-2"></td>
                                   </tr>
                                   {resultado.valFeriasIndenizadas > 0 && (
                                   <>
-                                      <tr>
-                                          <td className="px-4 py-2">Férias s/ Aviso Prévio Indenizado</td>
-                                          <td className="px-4 py-2 text-right text-slate-500">-</td>
-                                          <td className="px-4 py-2 text-right font-mono text-slate-700">{formatCurrency(resultado.valFeriasIndenizadas)}</td>
-                                          <td className="px-4 py-2 text-right font-mono text-slate-700"></td>
+                                      <tr className="print:bg-transparent odd:bg-slate-50/50">
+                                          <td className="px-3 py-2">Férias s/ Aviso Prévio Indenizado</td>
+                                          <td className="px-3 py-2 text-right text-slate-500 font-mono text-xs">-</td>
+                                          <td className="px-3 py-2 text-right font-mono">{formatCurrency(resultado.valFeriasIndenizadas)}</td>
+                                          <td className="px-3 py-2"></td>
                                       </tr>
-                                      <tr>
-                                          <td className="px-4 py-2">1/3 s/ Férias s/ Aviso Prévio Indenizado</td>
-                                          <td className="px-4 py-2 text-right text-slate-500">-</td>
-                                          <td className="px-4 py-2 text-right font-mono text-slate-700">{formatCurrency(resultado.valTercoFeriasIndenizadas)}</td>
-                                          <td className="px-4 py-2 text-right font-mono text-slate-700"></td>
+                                      <tr className="print:bg-transparent odd:bg-slate-50/50">
+                                          <td className="px-3 py-2">1/3 s/ Férias s/ Aviso Indenizado</td>
+                                          <td className="px-3 py-2 text-right text-slate-500 font-mono text-xs">-</td>
+                                          <td className="px-3 py-2 text-right font-mono">{formatCurrency(resultado.valTercoFeriasIndenizadas)}</td>
+                                          <td className="px-3 py-2"></td>
                                       </tr>
                                   </>
                                   )}
-                                  <tr>
-                                      <td className="px-4 py-2 text-red-600">INSS s/ Salários e 13º</td>
-                                      <td className="px-4 py-2 text-right text-slate-500">-</td>
-                                      <td className="px-4 py-2 text-right font-mono text-slate-700"></td>
-                                      <td className="px-4 py-2 text-right font-mono text-red-600">{formatCurrency(resultado.valINSS)}</td>
-                                  </tr>
-                                  <tr className="bg-slate-50 font-bold border-t border-slate-200">
-                                      <td className="px-4 py-3">TOTAIS</td>
-                                      <td className="px-4 py-3"></td>
-                                      <td className="px-4 py-3 text-right text-slate-800">{formatCurrency(resultado.liquido + resultado.valINSS)}</td>
-                                      <td className="px-4 py-3 text-right text-red-600">{formatCurrency(resultado.valINSS)}</td>
+                                  
+                                  {/* DESCONTOS */}
+                                  <tr className="print:bg-transparent odd:bg-slate-50/50">
+                                      <td className="px-3 py-2 text-red-600">INSS</td>
+                                      <td className="px-3 py-2 text-right text-slate-500 font-mono text-xs">Desc.</td>
+                                      <td className="px-3 py-2 text-right font-mono"></td>
+                                      <td className="px-3 py-2 text-right font-mono text-red-600">{formatCurrency(resultado.valINSS)}</td>
                                   </tr>
                               </tbody>
+                              <tfoot className="border-t-2 border-slate-300">
+                                  <tr>
+                                      <td className="px-3 py-3 font-bold text-slate-800">TOTAIS</td>
+                                      <td className="px-3 py-3"></td>
+                                      <td className="px-3 py-3 text-right font-bold font-mono text-slate-800">{formatCurrency(resultado.liquido + resultado.valINSS)}</td>
+                                      <td className="px-3 py-3 text-right font-bold font-mono text-red-600">{formatCurrency(resultado.valINSS)}</td>
+                                  </tr>
+                              </tfoot>
                           </table>
                       </div>
 
-                      <div className="flex justify-end mb-12">
-                           <div className="bg-slate-100 px-6 py-4 rounded-lg text-right">
-                               <span className="block text-xs font-bold text-slate-500 uppercase">Líquido a Receber</span>
-                               <span className="block text-3xl font-bold text-slate-900">{formatCurrency(resultado.liquido)}</span>
+                      {/* QUADRO DE RESUMO GERAL */}
+                      <div className="flex flex-col gap-0 mb-12 border-2 border-slate-800 rounded-lg overflow-hidden break-inside-avoid shadow-sm print:shadow-none">
+                           <div className="flex flex-col sm:flex-row divide-y sm:divide-y-0 sm:divide-x divide-slate-200 bg-white">
+                               <div className="flex-1 p-4 flex justify-between items-center">
+                                   <span className="text-xs font-bold uppercase text-slate-500">Rescisão Líquida a Receber</span>
+                                   <span className="font-mono font-bold text-lg text-slate-800">{formatCurrency(resultado.liquido)}</span>
+                               </div>
+                               <div className="flex-1 p-4 flex justify-between items-center bg-orange-50/30">
+                                   <span className="text-xs font-bold uppercase text-slate-500">Total FGTS + Multa</span>
+                                   <span className="font-mono font-bold text-lg text-slate-800">{formatCurrency(resultado.fgts.total)}</span>
+                               </div>
+                           </div>
+                           <div className="bg-slate-900 text-white p-6 flex justify-between items-center print:bg-slate-200 print:text-black print:border-t-2 print:border-slate-800">
+                               <span className="text-sm md:text-base font-bold uppercase tracking-wider">Total Geral a Receber</span>
+                               <span className="font-mono font-bold text-2xl md:text-3xl">{formatCurrency(resultado.liquido + resultado.fgts.total)}</span>
                            </div>
                       </div>
 
-                       <div className="border border-dashed border-orange-200 bg-orange-50 rounded-lg p-4 mb-12">
-                          <h3 className="font-bold text-orange-800 mb-2 text-sm uppercase">Demonstrativo de FGTS</h3>
-                          <div className="flex justify-between text-sm">
-                              <span>Depósito Rescisório + Saldo Anterior:</span>
-                              <span className="font-mono font-bold">{formatCurrency(resultado.fgts.saldoEstimado)}</span>
+                      {/* ASSINATURAS */}
+                      <div className="flex justify-between items-end gap-16 mt-20 break-inside-avoid">
+                          <div className="text-center flex-1">
+                              <div className="border-t border-slate-400 w-full mb-2"></div>
+                              <span className="text-xs uppercase font-bold text-slate-500">Assinatura do Funcionário</span>
                           </div>
-                          <div className="flex justify-between text-sm">
-                              <span>Multa Rescisória (40%):</span>
-                              <span className="font-mono font-bold">{formatCurrency(resultado.fgts.multa)}</span>
-                          </div>
-                          <div className="flex justify-between text-sm border-t border-orange-200 mt-2 pt-2">
-                              <span className="font-bold">Total FGTS:</span>
-                              <span className="font-mono font-bold text-orange-700">{formatCurrency(resultado.fgts.total)}</span>
+                          <div className="text-center flex-1">
+                              <div className="border-t border-slate-400 w-full mb-2"></div>
+                              <span className="text-xs uppercase font-bold text-slate-500">Assinatura do Empregador</span>
                           </div>
                       </div>
 
-                      <div className="flex justify-between items-end gap-16 mt-20">
-                          <div className="text-center flex-1 border-t border-slate-800 pt-2 text-sm">
-                              Assinatura do Funcionário
+                      {/* RODAPÉ CONTADOR */}
+                      <div className="mt-16 pt-6 border-t border-slate-200 flex items-center gap-4 break-inside-avoid">
+                          <div className="w-10 h-10 bg-slate-900 text-white flex items-center justify-center rounded-lg font-bold text-xl print:border print:border-slate-900 print:bg-white print:text-slate-900">L</div>
+                          <div>
+                              <p className="font-bold text-slate-900 text-sm uppercase">Lucas Araujo dos Santos</p>
+                              <div className="flex items-center gap-2 text-xs text-slate-500">
+                                  <span>Contador</span>
+                                  <span className="w-1 h-1 bg-slate-300 rounded-full"></span>
+                                  <span className="font-mono">CRC-BA: 046968/O-6</span>
+                              </div>
                           </div>
-                          <div className="text-center flex-1 border-t border-slate-800 pt-2 text-sm">
-                              Assinatura do Empregador
-                          </div>
-                      </div>
-
-                      <div className="mt-16 pt-8 border-t-4 border-indigo-600">
-                          <p className="font-bold text-slate-900 text-lg">Lucas Araujo dos Santos</p>
-                          <p className="text-slate-600">Contador</p>
-                          <p className="text-slate-500 text-sm font-mono mt-1">CRC-BA: 046968/O-6</p>
                       </div>
                   </div>
               </div>
