@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { createRoot } from 'react-dom/client';
 
@@ -137,7 +138,7 @@ interface ResultRowProps {
   hideIfZero?: boolean;
 }
 
-const ResultRow: React.FC<ResultRowProps> = ({ label, value, subtext = "", isNegative = false, isTotal = false, hideIfZero = false }) => {
+const ResultRow = ({ label, value, subtext = "", isNegative = false, isTotal = false, hideIfZero = false }: ResultRowProps) => {
   if (hideIfZero && Math.abs(value) < 0.01) return null;
 
   return (
@@ -155,11 +156,10 @@ const ResultRow: React.FC<ResultRowProps> = ({ label, value, subtext = "", isNeg
   );
 };
 
-interface FormInputProps extends React.InputHTMLAttributes<HTMLInputElement> {
+interface FormInputProps extends React.InputHTMLAttributes<HTMLInputElement | HTMLSelectElement> {
   label: string;
   type?: string;
   options?: { value: string; label: string }[];
-  onChange?: React.ChangeEventHandler<HTMLInputElement | HTMLSelectElement>;
 }
 
 const FormInput = ({ label, type = "text", className = "", options, ...props }: FormInputProps) => (
@@ -214,7 +214,6 @@ function App() {
   
   // Configs
   const [printSignatures, setPrintSignatures] = useState(true);
-  const [signatureText, setSignatureText] = useState('');
 
   // Inicializa a lista de meses do FGTS
   useEffect(() => {
@@ -506,7 +505,7 @@ function App() {
                             onClick={() => setFormData(prev => ({ ...prev, motivo: 'dispensa' }))}
                             className={`py-2 px-3 rounded-lg text-sm font-medium transition-all ${formData.motivo === 'dispensa' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
                         >
-                            Demissão pela empresa
+                            Sem Justa Causa
                         </button>
                         <button
                             type="button"
@@ -705,25 +704,14 @@ function App() {
         <div className="fixed inset-0 bg-slate-900/80 z-[100] flex justify-center overflow-y-auto print:absolute print:inset-0 print:bg-white print:z-auto print:h-full">
             <div className="bg-slate-200 min-h-screen w-full flex flex-col items-center py-8 print:bg-white print:p-0 print:h-full">
                 
-                <div className="bg-white p-4 rounded-xl shadow-lg mb-8 w-full max-w-4xl no-print">
-                    <div className="flex flex-col md:flex-row items-center gap-6 mb-4">
-                        <div className="flex items-center gap-4">
-                            <button onClick={() => setShowPrintModal(false)} className="text-slate-500 hover:text-slate-800 font-medium flex items-center gap-1"><span className="material-icons-round">arrow_back</span> Voltar</button>
-                            <div className="h-6 w-px bg-slate-200"></div>
-                            <label className="flex items-center gap-2 cursor-pointer select-none"><input type="checkbox" checked={printSignatures} onChange={e => setPrintSignatures(e.target.checked)} className="rounded text-indigo-600 focus:ring-indigo-500" /><span className="text-sm font-medium text-slate-700">Incluir campos de assinatura</span></label>
-                        </div>
-                        <div className="flex-1"></div>
-                        <button onClick={() => window.print()} className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2 rounded-lg font-bold shadow-md flex items-center gap-2"><span className="material-icons-round">print</span> Imprimir</button>
+                <div className="bg-white p-4 rounded-xl shadow-lg mb-8 flex flex-col md:flex-row items-center gap-6 w-full max-w-4xl no-print">
+                    <div className="flex items-center gap-4">
+                        <button onClick={() => setShowPrintModal(false)} className="text-slate-500 hover:text-slate-800 font-medium flex items-center gap-1"><span className="material-icons-round">arrow_back</span> Voltar</button>
+                        <div className="h-6 w-px bg-slate-200"></div>
+                        <label className="flex items-center gap-2 cursor-pointer select-none"><input type="checkbox" checked={printSignatures} onChange={e => setPrintSignatures(e.target.checked)} className="rounded text-indigo-600 focus:ring-indigo-500" /><span className="text-sm font-medium text-slate-700">Incluir campos de assinatura</span></label>
                     </div>
-                    {printSignatures && (
-                        <textarea
-                            className="w-full p-3 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none resize-none bg-slate-50"
-                            rows={3}
-                            placeholder="Insira aqui observações, termos de quitação ou outros detalhes para exibição antes das assinaturas..."
-                            value={signatureText}
-                            onChange={e => setSignatureText(e.target.value)}
-                        />
-                    )}
+                    <div className="flex-1"></div>
+                    <button onClick={() => window.print()} className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2 rounded-lg font-bold shadow-md flex items-center gap-2"><span className="material-icons-round">print</span> Imprimir</button>
                 </div>
 
                 {/* AREA DE IMPRESSAO - Layout Tabela Formal */}
@@ -807,20 +795,20 @@ function App() {
                                 </tr>
                                 )}
                                 {calculo.valorFeriasDobro > 0 && (
-                                <tr className="border-b border-slate-200">
-                                    <td className="p-2">Férias em Dobro</td>
-                                    <td className="p-2 text-center text-slate-500">{calculo.qtdFeriasDobro}</td>
-                                    <td className="p-2 text-right font-mono">{formatCurrency(calculo.valorFeriasDobro)}</td>
-                                    <td className="p-2 text-right font-mono"></td>
-                                </tr>
-                                )}
-                                {calculo.valorFeriasDobro > 0 && (
-                                <tr className="border-b border-slate-200 bg-slate-50">
-                                    <td className="p-2">1/3 s/ Férias em Dobro</td>
-                                    <td className="p-2 text-center text-slate-500">1/3</td>
-                                    <td className="p-2 text-right font-mono">{formatCurrency(calculo.tercoFeriasDobro)}</td>
-                                    <td className="p-2 text-right font-mono"></td>
-                                </tr>
+                                <>
+                                    <tr className="border-b border-slate-200">
+                                        <td className="p-2">Férias em Dobro</td>
+                                        <td className="p-2 text-center text-slate-500">{calculo.qtdFeriasDobro}</td>
+                                        <td className="p-2 text-right font-mono">{formatCurrency(calculo.valorFeriasDobro)}</td>
+                                        <td className="p-2 text-right font-mono"></td>
+                                    </tr>
+                                    <tr className="border-b border-slate-200 bg-slate-50">
+                                        <td className="p-2">1/3 s/ Férias em Dobro</td>
+                                        <td className="p-2 text-center text-slate-500">1/3</td>
+                                        <td className="p-2 text-right font-mono">{formatCurrency(calculo.tercoFeriasDobro)}</td>
+                                        <td className="p-2 text-right font-mono"></td>
+                                    </tr>
+                                </>
                                 )}
                                 <tr className="border-b border-slate-200">
                                     <td className="p-2">Férias Proporcionais</td>
@@ -921,23 +909,16 @@ function App() {
 
                     <div className="mt-auto">
                         {printSignatures && (
-                            <>
-                                {signatureText && (
-                                    <div className="mb-8 text-justify text-xs text-slate-700 whitespace-pre-wrap leading-relaxed border border-slate-200 p-3 rounded bg-slate-50">
-                                        {signatureText}
-                                    </div>
-                                )}
-                                <div className="grid grid-cols-2 gap-12 pt-8 border-t border-slate-200 mb-8">
-                                    <div className="text-center">
-                                        <div className="h-10"></div>
-                                        <div className="border-t border-slate-400 pt-2 font-bold text-xs uppercase">Assinatura do Empregador</div>
-                                    </div>
-                                    <div className="text-center">
-                                        <div className="h-10"></div>
-                                        <div className="border-t border-slate-400 pt-2 font-bold text-xs uppercase">Assinatura do Empregado</div>
-                                    </div>
-                                </div>
-                            </>
+                        <div className="grid grid-cols-2 gap-12 pt-8 border-t border-slate-200 mb-8">
+                            <div className="text-center">
+                                <div className="h-10"></div>
+                                <div className="border-t border-slate-400 pt-2 font-bold text-xs uppercase">Assinatura do Empregador</div>
+                            </div>
+                            <div className="text-center">
+                                <div className="h-10"></div>
+                                <div className="border-t border-slate-400 pt-2 font-bold text-xs uppercase">Assinatura do Empregado</div>
+                            </div>
+                        </div>
                         )}
 
                         <div className="border-t border-slate-200 pt-4 flex items-center gap-4">
@@ -957,10 +938,6 @@ function App() {
     </div>
   );
 }
-
-const container = document.getElementById('root');
-const root = createRoot(container!);
-root.render(<App />);
 
 const container = document.getElementById('root');
 const root = createRoot(container!);
